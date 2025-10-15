@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, ShopkeeperProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -35,3 +35,13 @@ class OTPVerifySerializer(serializers.Serializer):
 
     phone_number = serializers.CharField(max_length=15)
     otp = serializers.CharField(max_length=6)
+
+
+class ShopkeeperProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the ShopkeeperProfile model.
+    """
+
+    class Meta:
+        model = ShopkeeperProfile
+        fields = ["shop_name", "latitude", "longitude"]

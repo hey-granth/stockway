@@ -5,9 +5,16 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import User
-from .serializers import UserSerializer, OTPVerifySerializer, OTPRequestSerializer
+from rest_framework.permissions import IsAuthenticated
+from .models import User, ShopkeeperProfile
+from .serializers import (
+    UserSerializer,
+    OTPVerifySerializer,
+    OTPRequestSerializer,
+    ShopkeeperProfileSerializer,
+)
 from configs.config import Config
+from configs.permissions import IsShopkeeper
 
 
 class RequestOTP(APIView):
@@ -15,11 +22,6 @@ class RequestOTP(APIView):
         serializer = OTPRequestSerializer(data=request.data)
         if serializer.is_valid():
             phone_number = serializer.validated_data["phone_number"]
-
-            try:
-                user = User.objects.get(phone_number=phone_number)
-            except User.DoesNotExist:
-                user = User.objects.create(phone_number=phone_number)
 
             otp = str(random.randint(100000, 999999))
             cache.set(f"otp:{phone_number}", otp, timeout=300)  # 5 minutes
@@ -70,15 +72,11 @@ class VerifyOTP(APIView):
 
             cache.delete(f"otp:{phone_number}")
 
-            try:
-                user = User.objects.get(phone_number=phone_number)
-            except User.DoesNotExist:
-                return Response(
-                    {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
-                )
+            user, created = User.objects.get_or_create(phone_number=phone_number)
 
-            user.is_verified = True
-            user.save()
+            if not user.is_verified:
+                user.is_verified = True
+                user.save()
 
             token, _ = Token.objects.get_or_create(user=user)
 
@@ -90,4 +88,43 @@ class VerifyOTP(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ShopkeeperProfileView(APIView):
+    """
+    View for Shopkeeper to create or update their profile.
+    """
+
+    permission_classes = [IsAuthenticated, IsShopkeeper]
+
+    def get(self, request):
+        try:
+            profile = ShopkeeperProfile.objects.get(user=request.user)
+            serializer = ShopkeeperProfileSerializer(profile)
+            return Response(serializer.data)
+        except ShopkeeperProfile.DoesNotExist:
+            return Response(
+                {"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+    def post(self, request):
+        serializer = ShopkeeperProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request):
+        try:
+            profile = ShopkeeperProfile.objects.get(user=request.user)
+        except ShopkeeperProfile.DoesNotExist:
+            return Response(
+                {"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ShopkeeperProfileSerializer(profile, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

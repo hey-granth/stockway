@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "inventory",
     "warehouses",
     "accounts",
+    "riders",
 ]
 
 MIDDLEWARE = [
