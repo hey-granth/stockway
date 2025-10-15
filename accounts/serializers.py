@@ -24,6 +24,7 @@ class OTPRequestSerializer(serializers.Serializer):
     """
     Serializer for requesting an OTP.
     """
+
     phone_number = serializers.CharField(max_length=15)
 
 
@@ -31,5 +32,6 @@ class OTPVerifySerializer(serializers.Serializer):
     """
     Serializer for verifying an OTP.
     """
+
     phone_number = serializers.CharField(max_length=15)
     otp = serializers.CharField(max_length=6)

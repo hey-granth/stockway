@@ -11,8 +11,6 @@ class User(AbstractUser):
 
     phone_number = models.CharField(max_length=15, unique=True)
     role = models.CharField(max_length=50, choices=Role.choices)
-    otp = models.CharField(max_length=6, blank=True, null=True)
-    otp_created_at = models.DateTimeField(blank=True, null=True)
     is_verified = models.BooleanField(default=False)
 
     USERNAME_FIELD = "phone_number"

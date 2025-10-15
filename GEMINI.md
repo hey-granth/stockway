@@ -25,50 +25,90 @@ GEMINI is a modular monolithic backend built with Django and Django REST Framewo
 ## Project Structure
 
 ```
-rural_supply_backend/
-│
-├── config/                  # Project settings, URLs, WSGI
-│
-├── users/                   # Shopkeepers, warehouse admins, riders, super_admin
-│   ├── models.py            # Custom User model with role field
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│
-├── warehouses/             # Warehouse info and management
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│
-├── inventory/               # Items, stock levels, restock logs
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│
-├── orders/                  # Order placement, acceptance, status
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│
-├── delivery/                # Rider assignment, location tracking, payment calculation
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│
-├── payments/                # Rider payouts, warehouse settlements, logs
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│
-└── common/                  # Utilities, permissions, logging, helpers
-    ├── utils.py
-    ├── permissions.py
-    ├── mixins.py
+.
+├── accounts
+│   ├── admin.py
+│   ├── apps.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+├── backend
+│   ├── asgi.py
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── configs
+│   └── config.py
+├── delivery
+│   ├── admin.py
+│   ├── apps.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── tests.py
+│   └── views.py
+├── GEMINI.md
+├── inventory
+│   ├── admin.py
+│   ├── apps.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── tests.py
+│   └── views.py
+├── manage.py
+├── orders
+│   ├── admin.py
+│   ├── apps.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── tests.py
+│   └── views.py
+├── payments
+│   ├── admin.py
+│   ├── apps.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── tests.py
+│   └── views.py
+├── plans.md
+├── pyproject.toml
+├── requirements.txt
+├── uv.lock
+├── warehouses
+│   ├── admin.py
+│   ├── apps.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── serializers.py
+│   ├── tests.py
+│   └── views.py
+└── WARP.md -> GEMINI.md
+
 ```
 
 ## MVP Roadmap

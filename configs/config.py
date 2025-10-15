@@ -14,3 +14,4 @@ class Config:
     DB_HOST = getenv("DB_HOST", "localhost")
     DB_PORT = getenv("DB_PORT", "5432")
     DB_NAME = getenv("DB_NAME")
+    FAST2SMS_API_KEY = getenv("FAST2SMS_API_KEY")
