@@ -2,10 +2,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-
+from rest_framework.generics import get_object_or_404
 from .serializers import WarehouseSerializer
 from inventory.serializers import ItemSerializer
-from configs.permissions import IsWarehouseAdmin
+from configs.permissions import IsWarehouseAdmin, IsSuperAdmin, IsWarehouseAdminOrSuperAdmin
+from .models import Warehouse
+from .permissions import IsWarehouseOwnerOrSuperAdmin, HasWarehouseRole
 
 
 class WarehouseOnboardingView(APIView):
@@ -52,3 +54,77 @@ class WarehouseOnboardingView(APIView):
             )
 
         return Response(warehouse_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class WarehouseCreateView(APIView):
+    """Create a warehouse. Only WAREHOUSE_ADMIN and SUPER_ADMIN.
+    SUPER_ADMIN may specify an admin user via admin field; otherwise admin is request.user.
+    """
+
+    permission_classes = [IsAuthenticated, HasWarehouseRole]
+
+    def post(self, request):
+        data = request.data.copy()
+        if not IsSuperAdmin().has_permission(request, self):
+            # Force admin to be requester
+            data.pop("admin", None)
+        serializer = WarehouseSerializer(data=data)
+        if serializer.is_valid():
+            admin_user = request.user if not IsSuperAdmin().has_permission(request, self) else serializer.validated_data.get("admin", request.user)
+            warehouse = serializer.save(admin=admin_user)
+            return Response(WarehouseSerializer(warehouse).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class WarehouseDetailView(APIView):
+    """Retrieve or update a single warehouse."""
+
+    permission_classes = [IsAuthenticated, HasWarehouseRole, IsWarehouseOwnerOrSuperAdmin]
+
+    def get_object(self, pk):
+        return get_object_or_404(Warehouse, pk=pk)
+
+    def get(self, request, pk):
+        warehouse = self.get_object(pk)
+        # object-level permission
+        for perm in self.permission_classes:
+            if hasattr(perm(), "has_object_permission"):
+                if not perm().has_object_permission(request, self, warehouse):
+                    return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(WarehouseSerializer(warehouse).data)
+
+
+    # Both PATCH and PUT methods are supported for updates. PATCH allows partial updates (uses partial=True) in serializers, while PUT requires all fields.
+    def patch(self, request, pk):
+        warehouse = self.get_object(pk)
+        for perm in self.permission_classes:
+            if hasattr(perm(), "has_object_permission"):
+                if not perm().has_object_permission(request, self, warehouse):
+                    return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        data = request.data.copy()
+        if not IsSuperAdmin().has_permission(request, self):
+            data.pop("admin", None)
+        serializer = WarehouseSerializer(warehouse, data=data, partial=True)
+        if serializer.is_valid():
+            if "admin" in serializer.validated_data and not IsSuperAdmin().has_permission(request, self):
+                return Response({"admin": ["You cannot change admin."]}, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk):
+        warehouse = self.get_object(pk)
+        for perm in self.permission_classes:
+            if hasattr(perm(), "has_object_permission"):
+                if not perm().has_object_permission(request, self, warehouse):
+                    return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        data = request.data.copy()
+        if not IsSuperAdmin().has_permission(request, self):
+            data.pop("admin", None)
+        serializer = WarehouseSerializer(warehouse, data=data)
+        if serializer.is_valid():
+            if "admin" in serializer.validated_data and not IsSuperAdmin().has_permission(request, self):
+                return Response({"admin": ["You cannot change admin."]}, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
