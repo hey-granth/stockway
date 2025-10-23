@@ -128,3 +128,138 @@ class ShopkeeperProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomerProfileUpdateView(APIView):
+    """
+    PATCH /api/customers/profile/
+
+    Update customer (shopkeeper) profile with onboarding completion.
+    Only authenticated shopkeepers can access this endpoint.
+    Automatically marks onboarding_completed=True when all required fields are filled.
+    """
+
+    permission_classes = [IsAuthenticated, IsShopkeeper]
+
+    def get(self, request):
+        """
+        Get the current user's profile.
+
+        Returns:
+            200: Profile data
+            404: Profile not found (create one first)
+        """
+        try:
+            profile = ShopkeeperProfile.objects.get(user=request.user)
+            serializer = ShopkeeperProfileSerializer(profile)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ShopkeeperProfile.DoesNotExist:
+            return Response(
+                {
+                    "error": "Profile not found. Please create your profile first.",
+                    "detail": "Use POST method to create a new profile.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    def post(self, request):
+        """
+        Create a new profile for the authenticated shopkeeper.
+
+        Returns:
+            201: Profile created successfully
+            400: Validation errors
+            409: Profile already exists
+        """
+        # Check if profile already exists
+        if ShopkeeperProfile.objects.filter(user=request.user).exists():
+            return Response(
+                {
+                    "error": "Profile already exists. Use PATCH to update.",
+                    "detail": "A profile is already associated with this user.",
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        serializer = ShopkeeperProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            profile = serializer.save(user=request.user)
+            return Response(
+                ShopkeeperProfileSerializer(profile).data,
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request):
+        """
+        Partially update the customer profile.
+
+        Accepts partial data and updates only the provided fields.
+        Automatically sets onboarding_completed=True when all required fields are present:
+        - shop_name
+        - address
+        - latitude
+        - longitude
+        - At least one of: gst_number or license_number
+
+        Returns:
+            200: Profile updated successfully
+            404: Profile not found
+            400: Validation errors
+        """
+        try:
+            profile = ShopkeeperProfile.objects.get(user=request.user)
+        except ShopkeeperProfile.DoesNotExist:
+            return Response(
+                {
+                    "error": "Profile not found. Please create your profile first.",
+                    "detail": "Use POST method to create a new profile.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Partial update
+        serializer = ShopkeeperProfileSerializer(
+            profile, data=request.data, partial=True  # Allow partial updates
+        )
+
+        if serializer.is_valid():
+            updated_profile = serializer.save()
+            return Response(
+                ShopkeeperProfileSerializer(updated_profile).data,
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request):
+        """
+        Fully replace the customer profile (all fields required).
+
+        Returns:
+            200: Profile updated successfully
+            404: Profile not found
+            400: Validation errors
+        """
+        try:
+            profile = ShopkeeperProfile.objects.get(user=request.user)
+        except ShopkeeperProfile.DoesNotExist:
+            return Response(
+                {
+                    "error": "Profile not found. Please create your profile first.",
+                    "detail": "Use POST method to create a new profile.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ShopkeeperProfileSerializer(profile, data=request.data)
+
+        if serializer.is_valid():
+            updated_profile = serializer.save()
+            return Response(
+                ShopkeeperProfileSerializer(updated_profile).data,
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

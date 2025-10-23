@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
 from django.conf import settings
 
 
@@ -69,9 +70,35 @@ class ShopkeeperProfile(models.Model):
         on_delete=models.CASCADE,
         related_name="shopkeeper_profile",
     )
-    shop_name = models.CharField(max_length=255)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    shop_name = models.CharField(max_length=255, blank=True, default='')
+    address = models.TextField(blank=True, default='')
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    gst_number = models.CharField(max_length=50, blank=True, default='')
+    license_number = models.CharField(max_length=50, blank=True, default='')
+    onboarding_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
-        return self.shop_name
+        return self.shop_name if self.shop_name else f"Profile for {self.user.phone_number}"
+
+    def mark_onboarding_complete(self):
+        """
+        Mark onboarding as completed if all required fields are filled.
+        Required: shop_name, address, latitude, longitude, and at least one of gst_number or license_number
+        """
+        if (
+            self.shop_name
+            and self.address
+            and self.latitude is not None
+            and self.longitude is not None
+            and (self.gst_number or self.license_number)
+        ):
+            self.onboarding_completed = True
+        else:
+            self.onboarding_completed = False
+
+    class Meta:
+        verbose_name = "Shopkeeper Profile"
+        verbose_name_plural = "Shopkeeper Profiles"
