@@ -380,3 +380,88 @@ class NearbyWarehousesView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class WarehouseProximityView(APIView):
+    """
+    GET /api/warehouses/nearby/
+
+    Return the 5 nearest warehouses for an authenticated customer using PostGIS distance calculation.
+    Uses the customer's location from their ShopkeeperProfile.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Get the 5 nearest warehouses based on authenticated customer's profile location.
+
+        Returns:
+            200: List of 5 nearest warehouses with distance information
+            400: Customer location not set or invalid
+            404: Customer profile not found
+        """
+        from django.contrib.gis.db.models.functions import Distance
+        from accounts.models import ShopkeeperProfile
+
+        # Get customer's shopkeeper profile
+        try:
+            customer_profile = ShopkeeperProfile.objects.get(user=request.user)
+        except ShopkeeperProfile.DoesNotExist:
+            return Response(
+                {
+                    "error": "Profile not found",
+                    "detail": "Customer profile does not exist. Please complete your profile first.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check if customer has location set
+        if not customer_profile.location:
+            return Response(
+                {
+                    "error": "Location not set",
+                    "detail": "Your profile location is not set. Please update your profile with latitude and longitude.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Query warehouses with distance calculation
+        try:
+            nearby_warehouses = (
+                Warehouse.objects.annotate(
+                    distance=Distance("location", customer_profile.location)
+                )
+                .filter(location__isnull=False)  # Only warehouses with location set
+                .order_by("distance")[:5]  # Get 5 nearest warehouses
+            )
+
+            # Prepare response data
+            warehouses_data = []
+            for warehouse in nearby_warehouses:
+                warehouses_data.append(
+                    {
+                        "id": warehouse.id,
+                        "name": warehouse.name,
+                        "address": warehouse.address,
+                        "distance_km": round(warehouse.distance.km, 2),
+                    }
+                )
+
+            return Response(
+                {
+                    "count": len(warehouses_data),
+                    "customer_location": {
+                        "latitude": customer_profile.latitude,
+                        "longitude": customer_profile.longitude,
+                    },
+                    "warehouses": warehouses_data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": "Failed to calculate warehouse proximity", "detail": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

@@ -7,6 +7,7 @@ from .views import (
     WarehouseOrderConfirmView,
     WarehouseOrderAssignView,
     NearbyWarehousesView,
+    WarehouseProximityView,
 )
 from inventory.views import ItemListCreateView, ItemDetailView
 
@@ -14,7 +15,7 @@ urlpatterns = [
     path("onboarding/", WarehouseOnboardingView.as_view(), name="warehouse-onboarding"),
     path("", WarehouseCreateView.as_view(), name="warehouse-create"),
     path("<int:pk>/", WarehouseDetailView.as_view(), name="warehouse-detail"),
-    # Geospatial endpoint for finding nearby warehouses
+    # Geospatial endpoint for finding nearby warehouses (query params)
     path("nearby/", NearbyWarehousesView.as_view(), name="nearby-warehouses"),
     # Inventory endpoints scoped to a warehouse
     path(
@@ -44,3 +45,6 @@ urlpatterns = [
         name="warehouse-order-assign",
     ),
 ]
+
+# Add this to the main urls.py at project level
+# path("api/warehouses/nearby/", WarehouseProximityView.as_view(), name="warehouse-proximity")

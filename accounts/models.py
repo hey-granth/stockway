@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.contrib.gis.db import models as gis_models
 from django.conf import settings
 import datetime
 
@@ -72,6 +73,17 @@ class ShopkeeperProfile(models.Model):
     )
     shop_name: str = models.CharField(max_length=255, blank=True, default="")
     address: str = models.TextField(blank=True, default="")
+
+    # PostGIS PointField for geospatial queries
+    location = gis_models.PointField(
+        geography=True,
+        srid=4326,
+        help_text="Geographic location (longitude, latitude)",
+        null=True,
+        blank=True,
+    )
+
+    # Keep legacy fields for backward compatibility
     latitude: float = models.FloatField(null=True, blank=True)
     longitude: float = models.FloatField(null=True, blank=True)
     gst_number: str = models.CharField(max_length=50, blank=True, default="")
@@ -102,6 +114,24 @@ class ShopkeeperProfile(models.Model):
             self.onboarding_completed = True
         else:
             self.onboarding_completed = False
+
+    def save(self, *args, **kwargs):
+        """
+        Auto-sync location PointField with latitude/longitude fields.
+        """
+        from django.contrib.gis.geos import Point
+
+        # If latitude and longitude are provided, update location
+        if self.latitude is not None and self.longitude is not None:
+            self.location = Point(
+                float(self.longitude), float(self.latitude), srid=4326
+            )
+        # If location is provided, update latitude and longitude
+        elif self.location:
+            self.longitude = self.location.x
+            self.latitude = self.location.y
+
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Shopkeeper Profile"

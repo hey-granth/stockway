@@ -17,6 +17,8 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from warehouses.views import WarehouseProximityView
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -26,4 +28,9 @@ urlpatterns = [
     path("orders/", include("orders.urls")),
     path("payments/", include("payments.urls")),
     path("api/supabase/", include("configs.urls")),  # Supabase integration endpoints
+    path(
+        "api/warehouses/nearby/",
+        WarehouseProximityView.as_view(),
+        name="warehouse-proximity",
+    ),  # Warehouse proximity detection
 ]
