@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import Item
-from warehouses.models import Warehouse
 from configs.permissions import IsSuperAdmin
 
 

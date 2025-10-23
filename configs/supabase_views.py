@@ -4,6 +4,7 @@ Supabase diagnostic and utility views for testing integration.
 These views help verify Supabase Auth and Storage integration.
 """
 
+from typing import Any
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -15,13 +16,12 @@ from configs.supabase_storage import (
     upload_product_image,
     upload_rider_document,
 )
-import jwt
-from datetime import datetime
+from django.utils.timezone import now
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def supabase_health_check(request):
+def supabase_health_check(request) -> Response:
     """
     Health check endpoint to verify Supabase integration status.
 
@@ -33,8 +33,8 @@ def supabase_health_check(request):
     - Storage connection
     - Database connection
     """
-    health_status = {
-        "timestamp": datetime.utcnow().isoformat(),
+    health_status: dict[str, str | bool | dict[Any, Any]] = {
+        "timestamp": now().isoformat(),
         "supabase_configured": False,
         "jwt_secret_configured": False,
         "storage_configured": False,
@@ -93,7 +93,7 @@ def supabase_health_check(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def verify_token(request):
+def verify_token(request) -> Response:
     """
     Verify the current user's Supabase JWT token.
 
@@ -127,7 +127,7 @@ def verify_token(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def upload_file(request):
+def upload_file(request) -> Response:
     """
     Example endpoint for uploading files to Supabase Storage.
 
@@ -200,7 +200,7 @@ def upload_file(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def upload_product_image_view(request):
+def upload_product_image_view(request) -> Response:
     """
     Upload product image to Supabase Storage.
 
@@ -226,7 +226,7 @@ def upload_product_image_view(request):
         )
 
     try:
-        result = upload_product_image(
+        result: dict[str, Any] = upload_product_image(
             product_id=int(product_id),
             image_file=request.FILES["image"],
             warehouse_id=int(warehouse_id) if warehouse_id else None,
@@ -254,7 +254,7 @@ def upload_product_image_view(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def upload_rider_document_view(request):
+def upload_rider_document_view(request) -> Response:
     """
     Upload rider document to Supabase Storage.
 

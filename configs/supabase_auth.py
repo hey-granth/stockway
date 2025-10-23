@@ -10,6 +10,7 @@ from rest_framework import authentication, exceptions
 from django.contrib.auth import get_user_model
 from configs.config import Config
 
+
 User = get_user_model()
 
 
@@ -23,7 +24,7 @@ class SupabaseAuthentication(authentication.BaseAuthentication):
     - User is fetched/created based on supabase_uid from token payload
     """
 
-    keyword = "Bearer"
+    keyword: str = "Bearer"
 
     def authenticate(self, request):
         """
@@ -73,7 +74,7 @@ class SupabaseAuthentication(authentication.BaseAuthentication):
             raise exceptions.AuthenticationFailed(f"Invalid token: {str(e)}")
 
         # Extract Supabase user ID from token
-        supabase_uid = payload.get("sub")
+        supabase_uid: str = payload.get("sub")
 
         if not supabase_uid:
             raise exceptions.AuthenticationFailed("Token payload missing user ID")
@@ -83,27 +84,27 @@ class SupabaseAuthentication(authentication.BaseAuthentication):
             user = User.objects.get(supabase_uid=supabase_uid)
         except User.DoesNotExist:
             # Auto-create user from Supabase token data
-            user = self.create_user_from_token(payload)
+            user: User = self.create_user_from_token(payload)
 
         if not user.is_active:
             raise exceptions.AuthenticationFailed("User account is disabled")
 
-        return (user, token)
+        return (user, token)  # NOQA
 
-    def create_user_from_token(self, payload):
+    def create_user_from_token(self, payload) -> User:
         """
         Create a Django user from Supabase token payload.
 
         This is called when a valid Supabase user doesn't exist in Django yet.
         """
-        supabase_uid = payload.get("sub")
-        email = payload.get("email", "")
-        phone = payload.get("phone", "")
+        supabase_uid: str = payload.get("sub")
+        email: str = payload.get("email", "")
+        phone: str = payload.get("phone", "")
 
         # Use phone or email as identifier
-        phone_number = phone or email or f"user_{supabase_uid[:8]}"
+        phone_number: str = phone or email or f"user_{supabase_uid[:8]}"
 
-        user = User.objects.create(
+        user: User = User.objects.create(
             supabase_uid=supabase_uid,
             phone_number=phone_number,
             email=email if email else "",
@@ -113,7 +114,7 @@ class SupabaseAuthentication(authentication.BaseAuthentication):
 
         return user
 
-    def authenticate_header(self, request):
+    def authenticate_header(self, request) -> str:
         """
         Return a string to be used as the value of the `WWW-Authenticate`
         header in a `401 Unauthenticated` response.
@@ -127,4 +128,4 @@ class SupabaseTokenAuthentication(authentication.TokenAuthentication):
     Allows gradual migration from Django tokens to Supabase JWT.
     """
 
-    keyword = "Token"
+    keyword: str = "Token"

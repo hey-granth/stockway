@@ -10,13 +10,14 @@ from django.conf import settings
 from configs.config import Config
 from configs.supabase_storage import SupabaseStorage
 import jwt
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils.timezone import now
 
 
 class Command(BaseCommand):
-    help = "Test Supabase integration (Auth + Storage + DB)"
+    help: str = "Test Supabase integration (Auth + Storage + DB)"
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         self.stdout.write(
             self.style.SUCCESS("\n=== Supabase Integration Diagnostic ===\n")
         )
@@ -39,16 +40,16 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("\n=== Diagnostic Complete ===\n"))
 
-    def check_config(self):
+    def check_config(self) -> None:
         """Check if all required Supabase configs are set."""
-        configs = {
+        configs: dict[str, str] = {
             "SUPABASE_URL": Config.SUPABASE_URL,
             "SUPABASE_KEY": Config.SUPABASE_KEY,
             "SUPABASE_SERVICE_KEY": Config.SUPABASE_SERVICE_KEY,
             "SUPABASE_JWT_SECRET": Config.SUPABASE_JWT_SECRET,
         }
 
-        all_set = True
+        all_set: bool = True
         for key, value in configs.items():
             if value and value != f"your-{key.lower().replace('_', '-')}-here":
                 self.stdout.write(self.style.SUCCESS(f"   ✓ {key}: Configured"))
@@ -67,10 +68,7 @@ class Command(BaseCommand):
 
     def test_jwt(self):
         """Test JWT token generation and verification."""
-        if (
-            not Config.SUPABASE_JWT_SECRET
-            or Config.SUPABASE_JWT_SECRET == "your-jwt-secret-here"
-        ):
+        if not Config.SUPABASE_JWT_SECRET:
             self.stdout.write(self.style.ERROR("   ✗ JWT secret not configured"))
             return
 
@@ -81,8 +79,8 @@ class Command(BaseCommand):
                 "email": "test@example.com",
                 "phone": "1234567890",
                 "aud": "authenticated",
-                "exp": datetime.utcnow() + timedelta(hours=1),
-                "iat": datetime.utcnow(),
+                "exp": now() + timedelta(hours=1),
+                "iat": now(),
             }
 
             test_token = jwt.encode(
@@ -106,7 +104,7 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"   ✗ JWT test failed: {str(e)}"))
 
-    def test_storage(self):
+    def test_storage(self) -> None:
         """Test Supabase Storage connection."""
         if not Config.SUPABASE_URL or not Config.SUPABASE_SERVICE_KEY:
             self.stdout.write(
@@ -114,7 +112,7 @@ class Command(BaseCommand):
             )
             return
 
-        if Config.SUPABASE_URL == "https://your-project-id.supabase.co":
+        if Config.SUPABASE_URL:
             self.stdout.write(
                 self.style.WARNING(
                     "   ⚠ Using placeholder URL - update .env with real Supabase project URL"
@@ -130,7 +128,7 @@ class Command(BaseCommand):
             # List buckets (if accessible)
             try:
                 buckets = client.storage.list_buckets()
-                self.stdout.write(self.style.SUCCESS(f"   ✓ Storage connection: OK"))
+                self.stdout.write(self.style.SUCCESS("   ✓ Storage connection: OK"))
                 if buckets:
                     self.stdout.write(f"   Found {len(buckets)} storage bucket(s)")
                 else:
@@ -145,7 +143,7 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"   ✗ Storage test failed: {str(e)}"))
 
-    def test_database(self):
+    def test_database(self) -> None:
         """Test database connection."""
         from django.db import connection
 

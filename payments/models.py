@@ -1,4 +1,6 @@
 # payments/models.py
+from datetime import datetime
+from decimal import Decimal
 from django.db import models
 from django.conf import settings
 from orders.models import Order
@@ -11,24 +13,28 @@ class Payment(models.Model):
     Tracks transactions between shopkeepers -> warehouses and warehouses -> riders.
     """
 
-    PAYMENT_TYPE_CHOICES = (
+    PAYMENT_TYPE_CHOICES: tuple[tuple[str, str]] = (
         ("shopkeeper_to_warehouse", "Shopkeeper to Warehouse"),
         ("warehouse_to_rider", "Warehouse to Rider"),
     )
-    STATUS_CHOICES = (
+    STATUS_CHOICES: tuple[tuple[str, str]] = (
         ("pending", "Pending"),
         ("completed", "Completed"),
         ("failed", "Failed"),
     )
 
     # Core transaction fields
-    payment_type = models.CharField(max_length=30, choices=PAYMENT_TYPE_CHOICES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_type: str = models.CharField(max_length=30, choices=PAYMENT_TYPE_CHOICES)
+    status: str = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending"
+    )
+    amount: Decimal = models.DecimalField(max_digits=10, decimal_places=2)
 
     # Related entities
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="payments")
-    warehouse = models.ForeignKey(
+    order: Order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="payments"
+    )
+    warehouse: Warehouse = models.ForeignKey(
         Warehouse, on_delete=models.CASCADE, related_name="transactions"
     )
     payer = models.ForeignKey(
@@ -55,35 +61,35 @@ class Payment(models.Model):
     )
 
     # Payment metadata
-    transaction_id = models.CharField(
+    transaction_id: str = models.CharField(
         max_length=255,
         blank=True,
         unique=True,
         null=True,
         help_text="External payment gateway reference or internal transaction ID",
     )
-    distance_km = models.DecimalField(
+    distance_km: Decimal = models.DecimalField(
         max_digits=6,
         decimal_places=2,
         null=True,
         blank=True,
         help_text="Distance in kilometers for rider payout calculation",
     )
-    payment_method = models.CharField(
+    payment_method: str = models.CharField(
         max_length=50,
         default="mock",
         help_text="Payment method: mock, cash, card, upi, etc.",
     )
-    notes = models.TextField(blank=True, help_text="Additional transaction notes")
+    notes: str = models.TextField(blank=True, help_text="Additional transaction notes")
 
     # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at: datetime = models.DateTimeField(auto_now_add=True)
+    updated_at: datetime = models.DateTimeField(auto_now=True)
+    completed_at: datetime = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
-        indexes = [
+        indexes: list[models.Index] = [
             models.Index(fields=["status", "payment_type"]),
             models.Index(fields=["order"]),
             models.Index(fields=["warehouse"]),

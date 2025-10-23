@@ -7,10 +7,13 @@ This module provides functions to find nearby warehouses based on GPS coordinate
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
+from django.db.models import QuerySet
 from warehouses.models import Warehouse
 
 
-def get_nearby_warehouses(latitude, longitude, radius_km=10, limit=None):
+def get_nearby_warehouses(
+    latitude, longitude, radius_km=10, limit=None
+) -> QuerySet[Warehouse, Warehouse]:
     """
     Find warehouses within a specified radius of a given location.
 
@@ -42,7 +45,7 @@ def get_nearby_warehouses(latitude, longitude, radius_km=10, limit=None):
     return queryset
 
 
-def get_nearest_warehouse(latitude, longitude):
+def get_nearest_warehouse(latitude, longitude) -> Warehouse:
     """
     Find the single nearest warehouse to a given location.
 
@@ -67,7 +70,7 @@ def get_nearest_warehouse(latitude, longitude):
     )
 
 
-def get_warehouses_with_distance(latitude, longitude):
+def get_warehouses_with_distance(latitude, longitude) -> QuerySet[Warehouse]:
     """
     Get all warehouses with their distances from a given location.
 
@@ -90,7 +93,7 @@ def get_warehouses_with_distance(latitude, longitude):
     ).order_by("distance")
 
 
-def validate_coordinates(latitude, longitude):
+def validate_coordinates(latitude, longitude) -> tuple[bool, str | None]:
     """
     Validate latitude and longitude values.
 
@@ -121,7 +124,7 @@ def validate_coordinates(latitude, longitude):
         return False, "Invalid coordinate format. Must be numeric values."
 
 
-def calculate_distance_between_points(lat1, lon1, lat2, lon2):
+def calculate_distance_between_points(lat1, lon1, lat2, lon2) -> Distance:
     """
     Calculate distance between two geographic points.
 

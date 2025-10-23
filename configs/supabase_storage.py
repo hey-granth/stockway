@@ -5,7 +5,6 @@ This module provides utilities for uploading and fetching files from Supabase St
 Supports product images, rider documents, and other media files.
 """
 
-import os
 import mimetypes
 from typing import Optional, Dict, Any
 from supabase import create_client, Client

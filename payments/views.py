@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from decimal import Decimal
+from django.db.models import QuerySet
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -7,7 +8,6 @@ from django.db import transaction
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
-
 from .models import Payment
 from .serializers import (
     PaymentSerializer,
@@ -44,7 +44,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "amount", "status"]
     search_fields = ["transaction_id", "notes"]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Payment, Payment]:
         """Filter payments based on user role."""
         user = self.request.user
 
@@ -65,7 +65,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="shopkeeper-payment")
     @transaction.atomic
-    def shopkeeper_payment(self, request):
+    def shopkeeper_payment(self, request) -> Response:
         """
         Create a payment from shopkeeper to warehouse for an order.
         Shopkeepers only.
@@ -89,7 +89,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="rider-payout")
     @transaction.atomic
-    def rider_payout(self, request):
+    def rider_payout(self, request) -> Response:
         """
         Create a payout from warehouse to rider for a delivered order.
         Warehouse admins and super admins only.
@@ -113,7 +113,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["patch"], url_path="complete")
     @transaction.atomic
-    def complete_payment(self, request, pk=None):
+    def complete_payment(self, request, pk=None) -> Response:
         """
         Mark a payment as completed (mock payment completion).
         Warehouse admins for shopkeeper payments, super admins for all.
@@ -146,7 +146,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["patch"], url_path="fail")
     @transaction.atomic
-    def fail_payment(self, request, pk=None):
+    def fail_payment(self, request, pk=None) -> Response:
         """
         Mark a payment as failed.
         Warehouse admins for their payments, super admins for all.
@@ -183,14 +183,14 @@ class PaymentViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["get"], url_path="statistics")
-    def statistics(self, request):
+    def statistics(self, request) -> Response:
         """
         Get payment statistics for the requesting user.
         """
         user = request.user
         queryset = self.get_queryset()
 
-        stats = {
+        stats: dict[str, int | Decimal] = {
             "total_payments": queryset.count(),
             "pending": queryset.filter(status="pending").count(),
             "completed": queryset.filter(status="completed").count(),

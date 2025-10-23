@@ -1,8 +1,9 @@
+from typing import Literal
 from rest_framework import serializers
 from .models import Payment
-from orders.models import Order
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+
 
 User = get_user_model()
 
@@ -153,7 +154,7 @@ class UpdatePaymentStatusSerializer(serializers.ModelSerializer):
         model = Payment
         fields = ["status", "notes"]
 
-    def validate_status(self, value):
+    def validate_status(self, value) -> Literal["pending", "completed", "failed"]:
         """Ensure valid status transition."""
         if self.instance.status == "completed":
             raise serializers.ValidationError("Cannot modify a completed payment.")

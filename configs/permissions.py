@@ -6,7 +6,7 @@ class IsShopkeeper(BasePermission):
     Allows access only to shopkeeper users.
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view) -> bool:
         return bool(
             request.user
             and request.user.is_authenticated
@@ -19,7 +19,7 @@ class IsWarehouseAdmin(BasePermission):
     Allows access only to warehouse admin users.
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view) -> bool:
         return bool(
             request.user
             and request.user.is_authenticated
@@ -32,7 +32,7 @@ class IsRider(BasePermission):
     Allows access only to rider users.
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view) -> bool:
         return bool(
             request.user
             and request.user.is_authenticated
@@ -45,7 +45,7 @@ class IsSuperAdmin(BasePermission):
     Allows access only to super admin users.
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view) -> bool:
         return bool(
             request.user
             and request.user.is_authenticated
@@ -58,7 +58,7 @@ class IsWarehouseAdminOrSuperAdmin(BasePermission):
     Allows access only to warehouse admin or super admin users.
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view) -> bool:
         return bool(
             request.user
             and request.user.is_authenticated

@@ -2,7 +2,6 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-
 from .models import RiderProfile
 from .serializers import RiderProfileSerializer
 from configs.permissions import IsRider
@@ -75,7 +74,7 @@ class RiderOrderDeliverView(APIView):
         except Order.DoesNotExist:
             return Response(
                 {"error": "Order not found."},
-                status=status.HTTP_44_NOT_FOUND,
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         if order.status != "in_transit":

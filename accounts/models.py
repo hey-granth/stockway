@@ -1,16 +1,16 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from django.utils import timezone
 from django.conf import settings
+import datetime
 
 
 class UserManager(BaseUserManager):
-    use_in_migrations = True
+    use_in_migrations: bool = True
 
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("The Phone Number must be set")
-        user = self.model(phone_number=phone_number, **extra_fields)
+        user: User = self.model(phone_number=phone_number, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -20,15 +20,15 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("role", User.Role.SUPER_ADMIN)
 
-        if extra_fields.get("is_staff") is not True:
+        if not extra_fields.get("is_staff"):
             raise ValueError("Superuser must have is_staff=True.")
-        if extra_fields.get("is_superuser") is not True:
+        if not extra_fields.get("is_superuser"):
             raise ValueError("Superuser must have is_superuser=True.")
         return self.create_user(phone_number, password, **extra_fields)
 
 
 class User(AbstractUser):
-    username = None  # removing inherited username field so that phone number can be used as the username
+    username: None = None  # removing inherited username field so that phone number can be used as the username
     # was having issues in creating superuser without username field
 
     class Role(models.TextChoices):
@@ -37,16 +37,16 @@ class User(AbstractUser):
         RIDER = "RIDER", "Rider"
         SUPER_ADMIN = "SUPER_ADMIN", "Super Admin"
 
-    phone_number = models.CharField(max_length=15, unique=True)
-    role = models.CharField(
+    phone_number: str = models.CharField(max_length=15, unique=True)
+    role: str = models.CharField(
         max_length=50,
         choices=Role.choices,
         default=Role.SHOPKEEPER,
     )
-    is_verified = models.BooleanField(default=False)
+    is_verified: bool = models.BooleanField(default=False)
 
     # Supabase integration field
-    supabase_uid = models.CharField(
+    supabase_uid: str = models.CharField(
         max_length=255,
         unique=True,
         null=True,
@@ -65,20 +65,20 @@ class User(AbstractUser):
 
 
 class ShopkeeperProfile(models.Model):
-    user = models.OneToOneField(
+    user: User = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="shopkeeper_profile",
     )
-    shop_name = models.CharField(max_length=255, blank=True, default="")
-    address = models.TextField(blank=True, default="")
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
-    gst_number = models.CharField(max_length=50, blank=True, default="")
-    license_number = models.CharField(max_length=50, blank=True, default="")
-    onboarding_completed = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)
+    shop_name: str = models.CharField(max_length=255, blank=True, default="")
+    address: str = models.TextField(blank=True, default="")
+    latitude: float = models.FloatField(null=True, blank=True)
+    longitude: float = models.FloatField(null=True, blank=True)
+    gst_number: str = models.CharField(max_length=50, blank=True, default="")
+    license_number: str = models.CharField(max_length=50, blank=True, default="")
+    onboarding_completed: bool = models.BooleanField(default=False)
+    created_at: datetime.datetime = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at: datetime.datetime = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         return (
