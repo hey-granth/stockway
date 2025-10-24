@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "warehouses",
     "accounts",
     "riders",
+    "shopkeepers",  # Shopkeeper module
 ]
 
 MIDDLEWARE = [

@@ -1,41 +1,59 @@
 # Inventory App API Documentation
 
 ## Purpose
-Manages inventory items for warehouses. Only warehouse admins and super admins can create, update, or view items for their warehouses.
+- Manage inventory items for a specific warehouse.
+
+## Base URLs
+- `/warehouse/<warehouse_id>/items/`
+- `/warehouse/<warehouse_id>/items/<item_id>/`
+
+## Authentication
+- Token required: `Authorization: Token <token>`
+- Roles: `WAREHOUSE_ADMIN` for the warehouse or `SUPER_ADMIN`
 
 ## Endpoints
 
 ### 1. List & Create Items
-**URL:** `/inventory/warehouse/<warehouse_id>/items/`
-- **GET**: List all items in the specified warehouse.
-- **POST**: Create a new item in the specified warehouse.
-- **Permissions**: Warehouse admin for the warehouse or super admin.
-- **Request Body (POST)**:
-  ```json
-  {
-    "name": "Item Name",
-    "quantity": 100,
-    "description": "Details about the item"
-  }
-  ```
+- **GET** `/warehouse/{warehouse_id}/items/`
+  - List items for the warehouse (most recent first)
+  - **Response 200 OK**: 
+    ```json
+    {
+      "count": ...,
+      "next": ...,
+      "previous": ...,
+      "results": [ { item fields... } ]
+    }
+    ```
+- **POST** `/warehouse/{warehouse_id}/items/`
+  - Create a new item in the warehouse
+  - **Request Body**:
+    ```json
+    {
+      "name": "Rice 5kg",
+      "description": "Premium",
+      "sku": "RICE-5KG",
+      "price": "100.00",
+      "quantity": 100
+    }
+    ```
+  - **Response 201 Created**: created item
 
 ### 2. Retrieve & Update Item
-**URL:** `/inventory/warehouse/<warehouse_id>/items/<item_id>/`
-- **GET**: Retrieve details of a specific item in the warehouse.
-- **PATCH/PUT**: Update item details (e.g., quantity, description).
-- **Permissions**: Warehouse admin for the warehouse or super admin.
-- **Request Body (PATCH/PUT)**:
-  ```json
-  {
-    "quantity": 120
-  }
-  ```
+- **GET** `/warehouse/{warehouse_id}/items/{item_id}/`
+  - Retrieve details for a single item
+- **PATCH** `/warehouse/{warehouse_id}/items/{item_id}/`
+- **PUT** `/warehouse/{warehouse_id}/items/{item_id}/`
+  - Update item (quantity, price, etc.)
+
+## Item Schema (ItemSerializer)
+- Fields: `id`, `warehouse`, `name`, `description`, `sku`, `price`, `quantity`, `available`, `created_at`, `updated_at`
+- Notes: quantity must be non-negative
 
 ## Permissions
-- Only warehouse admins and super admins can access these endpoints.
-- Object-level permissions ensure users can only manage items in their own warehouses unless they are super admins.
+- Object-level checks ensure only the owning warehouse admin (or super admin) can manage items.
+- Super admins may act on any warehouse.
 
-## Notes
-- All endpoints require authentication.
-- Quantity updates are validated to prevent negative values.
-
+## Errors
+- 404 if warehouse not found or user lacks access
+- 400 on validation errors
