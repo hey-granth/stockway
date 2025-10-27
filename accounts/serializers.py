@@ -1,110 +1,141 @@
 from rest_framework import serializers
-from .models import User, ShopkeeperProfile
+from rest_framework_gis.serializers import GeoFeatureModelSerializer
+from django.contrib.auth import get_user_model
+from accounts.models import ShopkeeperProfile
+
+User = get_user_model()
+
+
+class SendOTPSerializer(serializers.Serializer):
+    """Serializer for sending OTP to phone number"""
+
+    phone_number = serializers.CharField(
+        max_length=20,
+        required=True,
+        help_text="Phone number in E.164 format (e.g., +1234567890)",
+    )
+
+    def validate_phone_number(self, value):
+        """Validate phone number format"""
+        # Basic validation - should start with +
+        if not value.startswith("+"):
+            raise serializers.ValidationError(
+                "Phone number must be in E.164 format (e.g., +1234567890)"
+            )
+        # Remove + and check if remaining is digits
+        if not value[1:].isdigit():
+            raise serializers.ValidationError(
+                "Phone number must contain only digits after +"
+            )
+        return value
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    """Serializer for verifying OTP"""
+
+    phone_number = serializers.CharField(
+        max_length=20, required=True, help_text="Phone number in E.164 format"
+    )
+    otp = serializers.CharField(
+        max_length=6, required=True, help_text="6-digit OTP received via SMS"
+    )
+
+    def validate_phone_number(self, value):
+        """Validate phone number format"""
+        if not value.startswith("+"):
+            raise serializers.ValidationError(
+                "Phone number must be in E.164 format (e.g., +1234567890)"
+            )
+        if not value[1:].isdigit():
+            raise serializers.ValidationError(
+                "Phone number must contain only digits after +"
+            )
+        return value
+
+    def validate_otp(self, value):
+        """Validate OTP format"""
+        if not value.isdigit():
+            raise serializers.ValidationError("OTP must contain only digits")
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the User model.
-    """
+    """Serializer for User model"""
 
     class Meta:
         model = User
         fields = [
             "id",
             "phone_number",
+            "email",
+            "full_name",
             "role",
-            "is_verified",
-            "first_name",
-            "last_name",
+            "is_active",
+            "date_joined",
+            "last_login",
         ]
-        read_only_fields = ["id", "is_verified"]
-
-
-class OTPRequestSerializer(serializers.Serializer):
-    """
-    Serializer for requesting an OTP.
-    """
-
-    phone_number = serializers.CharField(max_length=15)
-
-
-class OTPVerifySerializer(serializers.Serializer):
-    """
-    Serializer for verifying an OTP.
-    """
-
-    phone_number = serializers.CharField(max_length=15)
-    otp = serializers.CharField(max_length=6)
+        read_only_fields = ["id", "date_joined", "last_login"]
 
 
 class ShopkeeperProfileSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the ShopkeeperProfile model with full onboarding fields.
-    """
+    """Serializer for Shopkeeper Profile"""
 
-    user_phone = serializers.CharField(source="user.phone_number", read_only=True)
-    user_email = serializers.EmailField(source="user.email", read_only=True)
+    user = UserSerializer(read_only=True)
+    latitude = serializers.FloatField(write_only=True, required=False, allow_null=True)
+    longitude = serializers.FloatField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = ShopkeeperProfile
         fields = [
             "id",
-            "user_phone",
-            "user_email",
+            "user",
             "shop_name",
-            "address",
+            "shop_address",
+            "location",
             "latitude",
             "longitude",
             "gst_number",
-            "license_number",
-            "onboarding_completed",
+            "is_verified",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "onboarding_completed", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at", "is_verified", "location"]
 
-    def validate(self, data):
-        """
-        Validate that at least one of gst_number or license_number is provided.
-        """
-        gst_number = data.get(
-            "gst_number", self.instance.gst_number if self.instance else None
-        )
-        license_number = data.get(
-            "license_number", self.instance.license_number if self.instance else None
-        )
+    def create(self, validated_data):
+        from django.contrib.gis.geos import Point
 
-        # If both are provided or being updated, at least one must be non-empty
-        if "gst_number" in data or "license_number" in data:
-            if not gst_number and not license_number:
-                raise serializers.ValidationError(
-                    "At least one of 'gst_number' or 'license_number' must be provided."
-                )
+        latitude = validated_data.pop("latitude", None)
+        longitude = validated_data.pop("longitude", None)
 
-        return data
+        if latitude is not None and longitude is not None:
+            validated_data["location"] = Point(longitude, latitude, srid=4326)
 
-    def validate_latitude(self, value):
-        """Validate latitude is within valid range."""
-        if value is not None and (value < -90 or value > 90):
-            raise serializers.ValidationError("Latitude must be between -90 and 90.")
-        return value
-
-    def validate_longitude(self, value):
-        """Validate longitude is within valid range."""
-        if value is not None and (value < -180 or value > 180):
-            raise serializers.ValidationError("Longitude must be between -180 and 180.")
-        return value
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        """
-        Update profile and automatically mark onboarding as complete if all fields are filled.
-        """
-        # Update all fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+        from django.contrib.gis.geos import Point
 
-        # Check and update onboarding status
-        instance.mark_onboarding_complete()
-        instance.save()
+        latitude = validated_data.pop("latitude", None)
+        longitude = validated_data.pop("longitude", None)
 
-        return instance
+        if latitude is not None and longitude is not None:
+            validated_data["location"] = Point(longitude, latitude, srid=4326)
+
+        return super().update(instance, validated_data)
+
+
+class AuthResponseSerializer(serializers.Serializer):
+    """Serializer for authentication response"""
+
+    access_token = serializers.CharField()
+    refresh_token = serializers.CharField()
+    expires_in = serializers.IntegerField()
+    expires_at = serializers.IntegerField(required=False)
+    token_type = serializers.CharField()
+    user = UserSerializer()
+
+
+class RefreshTokenSerializer(serializers.Serializer):
+    """Serializer for refreshing tokens"""
+
+    refresh_token = serializers.CharField(required=True)

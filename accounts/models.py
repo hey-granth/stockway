@@ -1,138 +1,107 @@
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.db import models
-from django.contrib.gis.db import models as gis_models
-from django.conf import settings
-import datetime
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
+from django.contrib.gis.db import models
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
-    use_in_migrations: bool = True
+    """Custom user manager for phone-based authentication"""
 
     def create_user(self, phone_number, password=None, **extra_fields):
+        """Create and save a regular user with phone number"""
         if not phone_number:
-            raise ValueError("The Phone Number must be set")
-        user: User = self.model(phone_number=phone_number, **extra_fields)
-        user.set_password(password)
+            raise ValueError("The Phone Number field must be set")
+
+        extra_fields.setdefault("is_active", True)
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+
+        user = self.model(phone_number=phone_number, **extra_fields)
+        if password:
+            user.set_password(password)
         user.save(using=self._db)
         return user
 
     def create_superuser(self, phone_number, password=None, **extra_fields):
+        """Create and save a superuser with phone number"""
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("role", User.Role.SUPER_ADMIN)
+        extra_fields.setdefault("role", "ADMIN")
 
-        if not extra_fields.get("is_staff"):
+        if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
-        if not extra_fields.get("is_superuser"):
+        if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
+
         return self.create_user(phone_number, password, **extra_fields)
 
 
-class User(AbstractUser):
-    username: None = None  # removing inherited username field so that phone number can be used as the username
-    # was having issues in creating superuser without username field
+class User(AbstractBaseUser, PermissionsMixin):
+    """Custom User model with phone-based authentication"""
 
-    class Role(models.TextChoices):
-        SHOPKEEPER = "SHOPKEEPER", "Shopkeeper"
-        WAREHOUSE_ADMIN = "WAREHOUSE_ADMIN", "Warehouse Admin"
-        RIDER = "RIDER", "Rider"
-        SUPER_ADMIN = "SUPER_ADMIN", "Super Admin"
+    ROLE_CHOICES = [
+        ("SHOPKEEPER", "Shopkeeper"),
+        ("RIDER", "Rider"),
+        ("WAREHOUSE_MANAGER", "Warehouse Manager"),
+        ("ADMIN", "Admin"),
+    ]
 
-    phone_number: str = models.CharField(max_length=15, unique=True)
-    role: str = models.CharField(
-        max_length=50,
-        choices=Role.choices,
-        default=Role.SHOPKEEPER,
+    phone_number = models.CharField(max_length=20, unique=True, db_index=True)
+    supabase_uid = models.CharField(
+        max_length=255, unique=True, null=True, blank=True, db_index=True
     )
-    is_verified: bool = models.BooleanField(default=False)
+    email = models.EmailField(blank=True, null=True)
+    full_name = models.CharField(max_length=255, blank=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="SHOPKEEPER")
 
-    # Supabase integration field
-    supabase_uid: str = models.CharField(
-        max_length=255,
-        unique=True,
-        null=True,
-        blank=True,
-        db_index=True,
-        help_text="Supabase Auth UID for JWT authentication",
-    )
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
+
+    date_joined = models.DateTimeField(default=timezone.now)
+    last_login = models.DateTimeField(null=True, blank=True)
+
+    objects = UserManager()
 
     USERNAME_FIELD = "phone_number"
     REQUIRED_FIELDS = []
 
-    objects = UserManager()
+    class Meta:
+        db_table = "users"
+        verbose_name = "User"
+        verbose_name_plural = "Users"
 
     def __str__(self):
         return self.phone_number
 
+    def get_full_name(self):
+        return self.full_name or self.phone_number
+
+    def get_short_name(self):
+        return self.phone_number
+
 
 class ShopkeeperProfile(models.Model):
-    user: User = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="shopkeeper_profile",
+    """Extended profile for shopkeeper users"""
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="shopkeeper_profile"
     )
-    shop_name: str = models.CharField(max_length=255, blank=True, default="")
-    address: str = models.TextField(blank=True, default="")
-
-    # PostGIS PointField for geospatial queries
-    location = gis_models.PointField(
-        geography=True,
-        srid=4326,
-        help_text="Geographic location (longitude, latitude)",
-        null=True,
-        blank=True,
-    )
-
-    # Keep legacy fields for backward compatibility
-    latitude: float = models.FloatField(null=True, blank=True)
-    longitude: float = models.FloatField(null=True, blank=True)
-    gst_number: str = models.CharField(max_length=50, blank=True, default="")
-    license_number: str = models.CharField(max_length=50, blank=True, default="")
-    onboarding_completed: bool = models.BooleanField(default=False)
-    created_at: datetime.datetime = models.DateTimeField(auto_now_add=True, null=True)
-    updated_at: datetime.datetime = models.DateTimeField(auto_now=True, null=True)
-
-    def __str__(self):
-        return (
-            self.shop_name
-            if self.shop_name
-            else f"Profile for {self.user.phone_number}"
-        )
-
-    def mark_onboarding_complete(self):
-        """
-        Mark onboarding as completed if all required fields are filled.
-        Required: shop_name, address, latitude, longitude, and at least one of gst_number or license_number
-        """
-        if (
-            self.shop_name
-            and self.address
-            and self.latitude is not None
-            and self.longitude is not None
-            and (self.gst_number or self.license_number)
-        ):
-            self.onboarding_completed = True
-        else:
-            self.onboarding_completed = False
-
-    def save(self, *args, **kwargs):
-        """
-        Auto-sync location PointField with latitude/longitude fields.
-        """
-        from django.contrib.gis.geos import Point
-
-        # If latitude and longitude are provided, update location
-        if self.latitude is not None and self.longitude is not None:
-            self.location = Point(
-                float(self.longitude), float(self.latitude), srid=4326
-            )
-        # If location is provided, update latitude and longitude
-        elif self.location:
-            self.longitude = self.location.x
-            self.latitude = self.location.y
-
-        super().save(*args, **kwargs)
+    shop_name = models.CharField(max_length=255, default='')
+    shop_address = models.TextField(default='')
+    location = models.PointField(geography=True, null=True, blank=True)
+    gst_number = models.CharField(max_length=15, blank=True, default='')
+    is_verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        db_table = "shopkeeper_profiles"
         verbose_name = "Shopkeeper Profile"
         verbose_name_plural = "Shopkeeper Profiles"
+
+    def __str__(self):
+        return f"{self.shop_name} - {self.user.phone_number}"

@@ -1,74 +1,50 @@
-"""
-Permission classes for role-based access control.
-Centralized permissions used across all domain apps.
-"""
-
 from rest_framework.permissions import BasePermission
 
 
 class IsShopkeeper(BasePermission):
     """
-    Allows access only to shopkeeper users.
+    Permission class to check if user is a shopkeeper
     """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.role == "SHOPKEEPER"
-        )
-
-
-class IsWarehouseAdmin(BasePermission):
-    """
-    Allows access only to warehouse admin users.
-    """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.role == "WAREHOUSE_ADMIN"
+    def has_permission(self, request, view):
+        return (
+            request.user and
+            request.user.is_authenticated and
+            request.user.role == 'SHOPKEEPER'
         )
 
 
 class IsRider(BasePermission):
     """
-    Allows access only to rider users.
+    Permission class to check if user is a rider
     """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.role == "RIDER"
+    def has_permission(self, request, view):
+        return (
+            request.user and
+            request.user.is_authenticated and
+            request.user.role == 'RIDER'
         )
 
 
-class IsSuperAdmin(BasePermission):
+class IsWarehouseManager(BasePermission):
     """
-    Allows access only to super admin users.
+    Permission class to check if user is a warehouse manager
     """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.role == "SUPER_ADMIN"
+    def has_permission(self, request, view):
+        return (
+            request.user and
+            request.user.is_authenticated and
+            request.user.role == 'WAREHOUSE_MANAGER'
         )
 
 
-class IsWarehouseAdminOrSuperAdmin(BasePermission):
+class IsAdmin(BasePermission):
     """
-    Allows access only to warehouse admin or super admin users.
+    Permission class to check if user is an admin
     """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and (
-                request.user.role == "WAREHOUSE_ADMIN"
-                or request.user.role == "SUPER_ADMIN"
-            )
+    def has_permission(self, request, view):
+        return (
+            request.user and
+            request.user.is_authenticated and
+            request.user.role == 'ADMIN'
         )
+

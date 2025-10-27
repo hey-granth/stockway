@@ -1,94 +1,227 @@
-# Accounts App API Documentation
+# Accounts API Documentation
 
-Purpose
-- Phone OTP authentication and Shopkeeper (Customer) profile management.
+## Authentication Endpoints
 
-Base URL
-- /auth/
+All authentication is handled through Supabase using phone number and OTP (One-Time Password).
 
-Authentication
-- OTP endpoints: no auth required
-- Profile endpoints: Token auth required
-  - Header: Authorization: Token <token>
+### Base URL
+```
+/api/accounts/
+```
 
-Endpoints
+---
 
-1) Request OTP
-- POST /auth/request-otp/
-- Body:
-  {
-    "phone_number": "+919876543210"
+## 1. Send OTP
+
+Send an OTP to a phone number for authentication.
+
+**Endpoint:** `POST /auth/send-otp/`
+
+**Authentication:** None required
+
+**Request Body:**
+```json
+{
+  "phone_number": "+1234567890"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "OTP sent successfully to your phone",
+  "phone_number": "+1234567890"
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "error": {
+    "phone_number": ["Phone number must be in E.164 format (e.g., +1234567890)"]
   }
-- 200 OK:
-  { "message": "OTP sent successfully" }
-- 400/500: { "error": "..." }
+}
+```
 
-2) Verify OTP (Login)
-- POST /auth/verify-otp/
-- Body:
-  {
-    "phone_number": "+919876543210",
-    "otp": "123456"
+---
+
+## 2. Verify OTP
+
+Verify the OTP and get authentication tokens.
+
+**Endpoint:** `POST /auth/verify-otp/`
+
+**Authentication:** None required
+
+**Request Body:**
+```json
+{
+  "phone_number": "+1234567890",
+  "otp": "123456"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 3600,
+  "expires_at": 1698432000,
+  "token_type": "bearer",
+  "user": {
+    "id": 1,
+    "phone_number": "+1234567890",
+    "email": null,
+    "full_name": "",
+    "role": "SHOPKEEPER",
+    "is_active": true,
+    "date_joined": "2025-10-27T10:30:00Z",
+    "last_login": null
   }
-- 200 OK:
-  {
-    "message": "OTP verified successfully",
-    "token": "<drf_token>",
-    "user": {
-      "id": 1,
-      "phone_number": "+919876543210",
-      "role": "SHOPKEEPER",
-      "is_verified": true,
-      "first_name": "",
-      "last_name": ""
-    }
-  }
-- Notes: Save token and send with Authorization header for subsequent calls.
+}
+```
 
-3) Shopkeeper Profile (simple)
-- URL: /auth/shopkeeper/profile/
-- Methods: GET, POST, PUT
-- Auth: Token, role SHOPKEEPER
-- GET 200:
-  {
-    "id": 10,
-    "user_phone": "+919876543210",
-    "user_email": null,
-    "shop_name": "ABC Kirana",
-    "address": "12 Market Rd",
-    "latitude": 28.61,
-    "longitude": 77.21,
-    "gst_number": "",
-    "license_number": "",
-    "onboarding_completed": false,
-    "created_at": "2025-10-23T10:00:00Z",
-    "updated_at": "2025-10-23T10:00:00Z"
-  }
-- POST 201: same shape as GET (creates profile for current user)
-- PUT 200: full update
-- 404 when profile not created yet (for GET/PUT)
+**Error Response (401 Unauthorized):**
+```json
+{
+  "error": "Invalid or expired OTP"
+}
+```
 
-4) Customer Profile (full onboarding helper)
-- URL: /auth/customers/profile/
-- Methods: GET, POST, PATCH, PUT
-- Auth: Token, role SHOPKEEPER
-- GET 200: same schema as ShopkeeperProfile above
-- POST 201: create if none exists; 409 if already exists
-- PATCH 200: partial update; automatically sets onboarding_completed=true when
-  shop_name, address, latitude, longitude, and at least one of gst_number or license_number are present
-- PUT 200: full replace
-- Common 404:
-  {
-    "error": "Profile not found. Please create your profile first.",
-    "detail": "Use POST method to create a new profile."
-  }
+---
 
-Error Responses
-- 401 Unauthorized: { "detail": "Authentication credentials were not provided." }
-- 403 Forbidden: { "detail": "You do not have permission to perform this action." }
-- 400 Bad Request: { "error": "..." } or serializer field errors
+## 3. Logout
 
-Notes
-- All datetimes are ISO 8601 UTC strings.
-- Latitude ∈ [-90, 90], Longitude ∈ [-180, 180].
-- Use /api/warehouses/nearby/ and /shopkeeper/warehouses/nearby/ for proximity queries after setting profile location.
+Invalidate the current session.
+
+**Endpoint:** `POST /auth/logout/`
+
+**Authentication:** Required (Bearer token)
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+```
+
+---
+
+## 4. Refresh Token
+
+Get new access and refresh tokens using a refresh token.
+
+**Endpoint:** `POST /auth/refresh/`
+
+**Authentication:** None required
+
+**Request Body:**
+```json
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 3600,
+  "expires_at": 1698432000,
+  "token_type": "bearer"
+}
+```
+
+**Error Response (401 Unauthorized):**
+```json
+{
+  "error": "Failed to refresh session: Invalid refresh token"
+}
+```
+
+---
+
+## 5. Get Current User
+
+Get the currently authenticated user's details.
+
+**Endpoint:** `GET /auth/me/`
+
+**Authentication:** Required (Bearer token)
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "phone_number": "+1234567890",
+  "email": null,
+  "full_name": "",
+  "role": "SHOPKEEPER",
+  "is_active": true,
+  "date_joined": "2025-10-27T10:30:00Z",
+  "last_login": "2025-10-27T11:00:00Z"
+}
+```
+
+---
+
+## Authentication Flow
+
+### Initial Login
+1. User provides phone number
+2. Call `POST /auth/send-otp/` with phone number
+3. User receives OTP via SMS
+4. Call `POST /auth/verify-otp/` with phone number and OTP
+5. Store `access_token` and `refresh_token` on client
+
+### Authenticated Requests
+Include the access token in the Authorization header:
+```
+Authorization: Bearer <access_token>
+```
+
+### Token Refresh
+When the access token expires:
+1. Call `POST /auth/refresh/` with the refresh token
+2. Store new `access_token` and `refresh_token`
+
+### Logout
+Call `POST /auth/logout/` with the access token in the Authorization header
+
+---
+
+## Phone Number Format
+
+All phone numbers must be in **E.164 format**:
+- Start with `+`
+- Country code + number
+- No spaces or special characters
+
+Examples:
+- US: `+12025551234`
+- India: `+919876543210`
+- UK: `+447700900123`
+
+---
+
+## User Roles
+
+- `SHOPKEEPER` - Shop owner (default)
+- `RIDER` - Delivery rider
+- `WAREHOUSE_MANAGER` - Warehouse manager
+- `ADMIN` - System administrator
+

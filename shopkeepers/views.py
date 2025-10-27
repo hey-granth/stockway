@@ -6,12 +6,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Sum, Count, Q, Avg
 from django.utils import timezone
-from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 import calendar
-
 from core.permissions import IsShopkeeper
 from core.services import NotificationService
 from .models import Notification, SupportTicket
@@ -27,9 +25,8 @@ from .serializers import (
     SupportTicketSerializer,
     SupportTicketCreateSerializer,
     AnalyticsSummarySerializer,
-    MonthlyAnalyticsSerializer,
 )
-from orders.models import Order, OrderItem
+from orders.models import Order
 from payments.models import Payment
 from inventory.models import Item
 from warehouses.models import Warehouse

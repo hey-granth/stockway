@@ -1,11 +1,9 @@
-# orders/urls.py
 from django.urls import path
-from .views import (
-    ShopkeeperOrderCreateAPIView,
-    ShopkeeperOrderListAPIView,
-)
+
+# Placeholder for orders URLs
+# Add your order-specific endpoints here
 
 urlpatterns = [
-    path("create/", ShopkeeperOrderCreateAPIView.as_view(), name="order-create"),
-    path("", ShopkeeperOrderListAPIView.as_view(), name="order-list"),
+    # Add order URLs here as needed
 ]
+

@@ -1,281 +1,265 @@
-"""
-Service layer for cross-cutting concerns and business logic.
-Provides service classes for operations that span multiple apps.
-"""
+from supabase import create_client, Client
+from core.config import Config
+from typing import Optional, Dict, Any, List
+import logging
 
-from typing import Dict, Any, List, Optional, Tuple
-from decimal import Decimal
-from django.contrib.gis.geos import Point
-from django.contrib.gis.measure import Distance
-from django.db import transaction
-from django.utils import timezone
-
-from .exceptions import (
-    InsufficientStockError,
-    InvalidOrderStateError,
-    ResourceNotFoundError,
-)
-from .utils import calculate_distance_km, calculate_delivery_fee
+logger = logging.getLogger(__name__)
 
 
 class NotificationService:
-    """Service for creating and managing notifications."""
+    """Service for handling notifications"""
 
     @staticmethod
-    def create_order_notification(
-        user, order, notification_type: str, title: str, message: str
-    ):
+    def send_notification(user, title: str, message: str, notification_type: str = 'INFO'):
         """
-        Create an order-related notification.
+        Send notification to a user
 
         Args:
-            user: User to notify
-            order: Related order
-            notification_type: Type of notification
+            user: User object
             title: Notification title
             message: Notification message
-
-        Returns:
-            Created notification instance
+            notification_type: Type of notification (INFO, WARNING, ERROR, SUCCESS)
         """
-        from shopkeepers.models import Notification
+        try:
+            # Import here to avoid circular imports
+            from shopkeepers.models import Notification
 
-        return Notification.objects.create(
-            user=user,
-            notification_type=notification_type,
-            title=title,
-            message=message,
-            order=order,
-        )
-
-    @staticmethod
-    def notify_order_created(user, order):
-        """Send notification when order is created."""
-        return NotificationService.create_order_notification(
-            user=user,
-            order=order,
-            notification_type="general",
-            title="Order Created",
-            message=f"Your order #{order.id} has been created successfully.",
-        )
+            notification = Notification.objects.create(
+                user=user,
+                title=title,
+                message=message,
+                notification_type=notification_type
+            )
+            logger.info(f"Notification sent to user {user.id}: {title}")
+            return notification
+        except Exception as e:
+            logger.error(f"Failed to send notification: {str(e)}")
+            return None
 
     @staticmethod
-    def notify_order_cancelled(user, order):
-        """Send notification when order is cancelled."""
-        return NotificationService.create_order_notification(
-            user=user,
-            order=order,
-            notification_type="order_cancelled",
-            title="Order Cancelled",
-            message=f"Your order #{order.id} has been cancelled.",
-        )
+    def send_bulk_notification(users: List, title: str, message: str, notification_type: str = 'INFO'):
+        """
+        Send notification to multiple users
 
-    @staticmethod
-    def notify_order_accepted(user, order):
-        """Send notification when order is accepted."""
-        return NotificationService.create_order_notification(
-            user=user,
-            order=order,
-            notification_type="order_accepted",
-            title="Order Accepted",
-            message=f"Your order #{order.id} has been accepted by the warehouse.",
-        )
+        Args:
+            users: List of User objects
+            title: Notification title
+            message: Notification message
+            notification_type: Type of notification
+        """
+        try:
+            from shopkeepers.models import Notification
+
+            notifications = [
+                Notification(
+                    user=user,
+                    title=title,
+                    message=message,
+                    notification_type=notification_type
+                )
+                for user in users
+            ]
+            created = Notification.objects.bulk_create(notifications)
+            logger.info(f"Bulk notification sent to {len(created)} users")
+            return created
+        except Exception as e:
+            logger.error(f"Failed to send bulk notification: {str(e)}")
+            return []
 
 
 class InventoryService:
-    """Service for inventory management operations."""
+    """Service for inventory management operations"""
 
     @staticmethod
-    def check_availability(
-        warehouse, items_data: List[Dict[str, Any]]
-    ) -> Tuple[bool, Optional[str]]:
+    def check_availability(warehouse, items_data):
         """
-        Check if items are available in warehouse.
+        Check if all items are available in the warehouse
 
         Args:
-            warehouse: Warehouse instance
-            items_data: List of dicts with item_id and quantity
+            warehouse: Warehouse object
+            items_data: List of dicts with 'item_id' and 'quantity'
 
         Returns:
-            Tuple of (is_available, error_message)
+            Tuple of (is_available: bool, error_message: str or None)
         """
-        from inventory.models import Item
+        try:
+            from inventory.models import Item
 
-        for item_data in items_data:
-            item_id = item_data.get("item_id")
-            quantity = item_data.get("quantity")
+            for item_data in items_data:
+                item_id = item_data.get('item_id')
+                quantity = item_data.get('quantity')
 
-            try:
-                inventory_item = Item.objects.get(id=item_id, warehouse=warehouse)
-                if inventory_item.quantity < quantity:
-                    return False, (
-                        f"Not enough stock for {inventory_item.name}. "
-                        f"Available: {inventory_item.quantity}, Requested: {quantity}"
-                    )
-            except Item.DoesNotExist:
-                return False, f"Item with ID {item_id} not found in this warehouse."
+                try:
+                    item = Item.objects.get(id=item_id, warehouse=warehouse)
+                    if item.quantity < quantity:
+                        return False, f"Insufficient stock for {item.name}. Available: {item.quantity}, Requested: {quantity}"
+                except Item.DoesNotExist:
+                    return False, f"Item with ID {item_id} not found in this warehouse"
 
-        return True, None
+            return True, None
+        except Exception as e:
+            logger.error(f"Error checking availability: {str(e)}")
+            return False, f"Error checking availability: {str(e)}"
 
     @staticmethod
-    @transaction.atomic
-    def reserve_items(warehouse, items_data: List[Dict[str, Any]]):
+    def check_stock_availability(item_id: int, quantity: int) -> bool:
         """
-        Reserve (decrement) inventory for order items.
+        Check if sufficient stock is available
 
         Args:
-            warehouse: Warehouse instance
-            items_data: List of dicts with item_id and quantity
+            item_id: Item ID
+            quantity: Requested quantity
 
-        Raises:
-            InsufficientStockError: If stock is insufficient
+        Returns:
+            True if stock available, False otherwise
         """
-        from inventory.models import Item
+        try:
+            from inventory.models import Item
 
-        for item_data in items_data:
-            item = Item.objects.select_for_update().get(
-                id=item_data["item_id"], warehouse=warehouse
-            )
+            item = Item.objects.get(id=item_id)
+            return item.stock_quantity >= quantity
+        except Exception as e:
+            logger.error(f"Error checking stock availability: {str(e)}")
+            return False
 
-            if item.quantity < item_data["quantity"]:
-                raise InsufficientStockError(f"Insufficient stock for {item.name}")
+    @staticmethod
+    def update_stock(item_id: int, quantity_change: int):
+        """
+        Update item stock quantity
 
-            item.quantity -= item_data["quantity"]
+        Args:
+            item_id: Item ID
+            quantity_change: Amount to add (positive) or subtract (negative)
+        """
+        try:
+            from inventory.models import Item
+            from django.db.models import F
+
+            item = Item.objects.get(id=item_id)
+            item.stock_quantity = F('stock_quantity') + quantity_change
             item.save()
+            item.refresh_from_db()
+
+            logger.info(f"Stock updated for item {item_id}: {quantity_change}")
+            return item
+        except Exception as e:
+            logger.error(f"Error updating stock: {str(e)}")
+            raise
 
 
-class GeoService:
-    """Service for geospatial operations."""
+class SupabaseService:
+    """Service for interacting with Supabase Auth"""
 
-    @staticmethod
-    def get_nearby_warehouses(
-        latitude: float, longitude: float, radius_km: float = 10, limit: int = None
-    ):
+    _client: Optional[Client] = None
+
+    @classmethod
+    def get_client(cls) -> Client:
+        """Get or create Supabase client"""
+        if cls._client is None:
+            Config.validate()
+            cls._client = create_client(Config.SUPABASE_URL, Config.SUPABASE_KEY)
+        return cls._client
+
+    @classmethod
+    def send_otp(cls, phone: str) -> Dict[str, Any]:
         """
-        Find warehouses near a location.
+        Send OTP to phone number
 
         Args:
-            latitude: Latitude of location
-            longitude: Longitude of location
-            radius_km: Search radius in kilometers
-            limit: Maximum number of results
+            phone: Phone number in E.164 format (e.g., +1234567890)
 
         Returns:
-            QuerySet of nearby warehouses
+            Response from Supabase
         """
-        from warehouses.models import Warehouse
+        try:
+            client = cls.get_client()
+            response = client.auth.sign_in_with_otp({"phone": phone})
+            logger.info(f"OTP sent to {phone}")
+            return {"success": True, "message": "OTP sent successfully"}
+        except Exception as e:
+            logger.error(f"Failed to send OTP to {phone}: {str(e)}")
+            raise Exception(f"Failed to send OTP: {str(e)}")
 
-        point = Point(longitude, latitude, srid=4326)
-        queryset = (
-            Warehouse.objects.filter(
-                location__distance_lte=(point, Distance(km=radius_km))
+    @classmethod
+    def verify_otp(cls, phone: str, token: str) -> Dict[str, Any]:
+        """
+        Verify OTP for phone number
+
+        Args:
+            phone: Phone number in E.164 format
+            token: OTP token received via SMS
+
+        Returns:
+            User session data from Supabase
+        """
+        try:
+            client = cls.get_client()
+            response = client.auth.verify_otp(
+                {"phone": phone, "token": token, "type": "sms"}
             )
-            .annotate(distance=Distance("location", point))
-            .order_by("distance")
-        )
+            logger.info(f"OTP verified for {phone}")
+            return response
+        except Exception as e:
+            logger.error(f"Failed to verify OTP for {phone}: {str(e)}")
+            raise Exception(f"Invalid or expired OTP: {str(e)}")
 
-        if limit:
-            queryset = queryset[:limit]
-
-        return queryset
-
-    @staticmethod
-    def calculate_delivery_distance(shopkeeper_profile, warehouse) -> float:
+    @classmethod
+    def sign_out(cls, access_token: str) -> Dict[str, Any]:
         """
-        Calculate delivery distance between shopkeeper and warehouse.
+        Sign out user
 
         Args:
-            shopkeeper_profile: ShopkeeperProfile instance
-            warehouse: Warehouse instance
+            access_token: User's access token
 
         Returns:
-            Distance in kilometers
+            Success response
         """
-        if not shopkeeper_profile.location or not warehouse.location:
-            raise ValueError("Both locations must be set")
+        try:
+            client = cls.get_client()
+            # Set the session with the access token
+            client.auth.set_session(access_token, access_token)
+            client.auth.sign_out()
+            logger.info("User signed out successfully")
+            return {"success": True, "message": "Signed out successfully"}
+        except Exception as e:
+            logger.error(f"Failed to sign out: {str(e)}")
+            raise Exception(f"Sign out failed: {str(e)}")
 
-        return calculate_distance_km(
-            shopkeeper_profile.latitude,
-            shopkeeper_profile.longitude,
-            warehouse.latitude,
-            warehouse.longitude,
-        )
-
-
-class PaymentService:
-    """Service for payment operations."""
-
-    @staticmethod
-    def create_shopkeeper_payment(
-        order, amount: Decimal, payment_method: str, notes: str = ""
-    ):
+    @classmethod
+    def get_user(cls, access_token: str) -> Dict[str, Any]:
         """
-        Create payment from shopkeeper to warehouse.
+        Get user details from access token
 
         Args:
-            order: Order instance
-            amount: Payment amount
-            payment_method: Payment method
-            notes: Additional notes
+            access_token: User's access token
 
         Returns:
-            Created Payment instance
+            User data from Supabase
         """
-        from payments.models import Payment
+        try:
+            client = cls.get_client()
+            response = client.auth.get_user(access_token)
+            return response
+        except Exception as e:
+            logger.error(f"Failed to get user: {str(e)}")
+            raise Exception(f"Failed to get user: {str(e)}")
 
-        return Payment.objects.create(
-            payment_type="shopkeeper_to_warehouse",
-            warehouse=order.warehouse,
-            payer=order.shopkeeper,
-            payee=order.warehouse.admin,
-            order=order,
-            amount=amount,
-            payment_method=payment_method,
-            notes=notes,
-            status="pending",
-        )
-
-    @staticmethod
-    def create_rider_payout(
-        order,
-        rider,
-        amount: Decimal,
-        distance_km: float,
-        payment_method: str,
-        notes: str = "",
-    ):
+    @classmethod
+    def refresh_session(cls, refresh_token: str) -> Dict[str, Any]:
         """
-        Create payout from warehouse to rider.
+        Refresh user session
 
         Args:
-            order: Order instance
-            rider: Rider user instance
-            amount: Payout amount
-            distance_km: Delivery distance
-            payment_method: Payment method
-            notes: Additional notes
+            refresh_token: User's refresh token
 
         Returns:
-            Created Payment instance
+            New session data
         """
-        from payments.models import Payment
-
-        return Payment.objects.create(
-            payment_type="warehouse_to_rider",
-            warehouse=order.warehouse,
-            payer=order.warehouse.admin,
-            payee=rider,
-            rider=rider,
-            order=order,
-            amount=amount,
-            distance_km=Decimal(str(distance_km)),
-            payment_method=payment_method,
-            notes=notes,
-            status="pending",
-        )
-
-
-"""
-Core module for shared utilities, permissions, and services.
-Centralizes reusable code to avoid duplication across domain apps.
-"""
+        try:
+            client = cls.get_client()
+            response = client.auth.refresh_session(refresh_token)
+            logger.info("Session refreshed successfully")
+            return response
+        except Exception as e:
+            logger.error(f"Failed to refresh session: {str(e)}")
+            raise Exception(f"Failed to refresh session: {str(e)}")

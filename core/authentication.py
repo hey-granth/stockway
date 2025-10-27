@@ -1,206 +1,86 @@
-"""
-Supabase Authentication Backend for Django REST Framework
-
-This module provides JWT-based authentication using Supabase Auth.
-It verifies Supabase JWT tokens and links them to Django User model via supabase_uid.
-"""
-
-import jwt
-from rest_framework import authentication, exceptions
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
-from core.config import Config
+from core.services import SupabaseService
+import logging
 
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
 
-class SupabaseAuthentication(authentication.BaseAuthentication):
+class SupabaseAuthentication(BaseAuthentication):
     """
-    Custom DRF authentication class that verifies Supabase JWT tokens.
-
-    Usage:
-    - Add 'Authorization: Bearer <supabase_jwt>' header to requests
-    - Token is verified using SUPABASE_JWT_SECRET
-    - User is fetched/created based on supabase_uid from token payload
+    Custom authentication class for Supabase JWT tokens
     """
-
-    keyword: str = "Bearer"
 
     def authenticate(self, request):
         """
-        Authenticate the request and return a two-tuple of (user, token).
+        Authenticate the request using Supabase access token
+
+        Returns:
+            tuple: (user, token) or None
         """
-        auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+        auth_header = request.headers.get("Authorization")
 
         if not auth_header:
             return None
 
         try:
-            auth_parts = auth_header.split()
+            # Extract token from "Bearer <token>"
+            parts = auth_header.split()
+            if len(parts) != 2 or parts[0].lower() != "bearer":
+                raise AuthenticationFailed("Invalid authorization header format")
 
-            if len(auth_parts) != 2:
-                return None
+            access_token = parts[1]
 
-            if auth_parts[0].lower() != self.keyword.lower():
-                return None
+            # Verify token with Supabase
+            supabase_user = SupabaseService.get_user(access_token)
 
-            token = auth_parts[1]
-
-        except (ValueError, UnicodeDecodeError):
-            raise exceptions.AuthenticationFailed("Invalid token header")
-
-        return self.authenticate_credentials(token)
-
-    def authenticate_credentials(self, token):
-        """
-        Verify the Supabase JWT token and return the associated user.
-        """
-        if not Config.SUPABASE_JWT_SECRET:
-            raise exceptions.AuthenticationFailed("Supabase JWT secret not configured")
-
-        try:
-            # Decode and verify the JWT token
-            payload = jwt.decode(
-                token,
-                Config.SUPABASE_JWT_SECRET,
-                algorithms=["HS256"],
-                audience="authenticated",
+            # Access user data from response
+            user_data = (
+                supabase_user.user
+                if hasattr(supabase_user, "user")
+                else supabase_user.get("user")
             )
 
-        except jwt.ExpiredSignatureError:
-            raise exceptions.AuthenticationFailed("Token has expired")
+            if not user_data:
+                raise AuthenticationFailed("Invalid token")
 
-        except jwt.InvalidTokenError as e:
-            raise exceptions.AuthenticationFailed(f"Invalid token: {str(e)}")
+            # Get or create Django user
+            user = self._get_or_create_user(user_data)
 
-        # Extract Supabase user ID from token
-        supabase_uid: str = payload.get("sub")
+            return (user, access_token)
 
-        if not supabase_uid:
-            raise exceptions.AuthenticationFailed("Token payload missing user ID")
+        except AuthenticationFailed:
+            raise
+        except Exception as e:
+            logger.error(f"Authentication error: {str(e)}")
+            raise AuthenticationFailed("Authentication failed")
 
-        # Get or create Django user linked to Supabase UID
+    def _get_or_create_user(self, supabase_user):
+        """
+        Get or create Django user from Supabase user data
+        """
+        supabase_uid = (
+            supabase_user.id
+            if hasattr(supabase_user, "id")
+            else supabase_user.get("id")
+        )
+        phone = (
+            supabase_user.phone
+            if hasattr(supabase_user, "phone")
+            else supabase_user.get("phone")
+        )
+
         try:
+            # Try to find user by supabase_uid
             user = User.objects.get(supabase_uid=supabase_uid)
         except User.DoesNotExist:
-            # Auto-create user from Supabase token data
-            user: User = self.create_user_from_token(payload)
-
-        if not user.is_active:
-            raise exceptions.AuthenticationFailed("User account is disabled")
-
-        return (user, token)  # NOQA
-
-    def create_user_from_token(self, payload) -> User:
-        """
-        Create a Django user from Supabase token payload.
-
-        This is called when a valid Supabase user doesn't exist in Django yet.
-        """
-        supabase_uid: str = payload.get("sub")
-        email: str = payload.get("email", "")
-        phone: str = payload.get("phone", "")
-
-        # Use phone or email as identifier
-        phone_number: str = phone or email or f"user_{supabase_uid[:8]}"
-
-        user: User = User.objects.create(
-            supabase_uid=supabase_uid,
-            phone_number=phone_number,
-            email=email if email else "",
-            is_verified=True,  # Already verified by Supabase
-            is_active=True,
-        )
+            # Create new user
+            user = User.objects.create(
+                phone_number=phone, supabase_uid=supabase_uid, is_active=True
+            )
+            logger.info(f"Created new user for phone: {phone}")
 
         return user
-
-    def authenticate_header(self, request) -> str:
-        """
-        Return a string to be used as the value of the `WWW-Authenticate`
-        header in a `401 Unauthenticated` response.
-        """
-        return self.keyword
-
-
-class SupabaseTokenAuthentication(authentication.TokenAuthentication):
-    """
-    Fallback authentication for legacy token-based auth.
-    Allows gradual migration from Django tokens to Supabase JWT.
-    """
-
-    keyword: str = "Token"
-
-
-"""
-Permission classes for role-based access control.
-Centralized permissions used across all domain apps.
-"""
-from rest_framework.permissions import BasePermission
-
-
-class IsShopkeeper(BasePermission):
-    """
-    Allows access only to shopkeeper users.
-    """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.role == "SHOPKEEPER"
-        )
-
-
-class IsWarehouseAdmin(BasePermission):
-    """
-    Allows access only to warehouse admin users.
-    """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.role == "WAREHOUSE_ADMIN"
-        )
-
-
-class IsRider(BasePermission):
-    """
-    Allows access only to rider users.
-    """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.role == "RIDER"
-        )
-
-
-class IsSuperAdmin(BasePermission):
-    """
-    Allows access only to super admin users.
-    """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.role == "SUPER_ADMIN"
-        )
-
-
-class IsWarehouseAdminOrSuperAdmin(BasePermission):
-    """
-    Allows access only to warehouse admin or super admin users.
-    """
-
-    def has_permission(self, request, view) -> bool:
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and (
-                request.user.role == "WAREHOUSE_ADMIN"
-                or request.user.role == "SUPER_ADMIN"
-            )
-        )

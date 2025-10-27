@@ -1,12 +1,9 @@
 from django.urls import path
-from .views import RiderProfileView, RiderOrderListView, RiderOrderDeliverView
+
+# Placeholder for riders URLs
+# Add your rider-specific endpoints here
 
 urlpatterns = [
-    path("profile/", RiderProfileView.as_view(), name="rider-profile"),
-    path("orders/", RiderOrderListView.as_view(), name="rider-orders"),
-    path(
-        "orders/<int:order_id>/deliver/",
-        RiderOrderDeliverView.as_view(),
-        name="rider-order-deliver",
-    ),
+    # Add rider URLs here as needed
 ]
+

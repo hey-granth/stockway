@@ -145,11 +145,16 @@ AUTH_USER_MODEL = "accounts.User"
 # REST Framework Configuration
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "core.authentication.SupabaseAuthentication",  # Primary: Supabase JWT
-        "core.authentication.SupabaseTokenAuthentication",  # Fallback: Django Token
+        "core.authentication.SupabaseAuthentication",  # Supabase JWT authentication
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
     ],
 }
 
@@ -166,7 +171,7 @@ CACHES = {
 # Supabase Configuration
 SUPABASE_URL = Config.SUPABASE_URL
 SUPABASE_KEY = Config.SUPABASE_KEY
-SUPABASE_SERVICE_KEY = Config.SUPABASE_SERVICE_KEY
+SUPABASE_SERVICE_ROLE_KEY = Config.SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_JWT_SECRET = Config.SUPABASE_JWT_SECRET
 
 # Optional: Use Supabase Managed Postgres (comment out to use local DB)

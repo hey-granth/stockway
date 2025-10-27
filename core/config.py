@@ -1,36 +1,38 @@
-"""
-Configuration module for environment variables.
-Centralizes all configuration settings.
-"""
-
-from os import getenv
+import os
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
 
 class Config:
-    SECRET_KEY: str = getenv("SECRET_KEY")
-    DEBUG: bool = getenv("DEBUG", "False")
+    # Django settings
+    SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key-change-this")
+    DEBUG = os.getenv("DEBUG", "True") == "True"
 
-    DATABASE_URL: str = getenv("DATABASE_URL")
-    DB_USER: str = getenv("DB_USER")
-    DB_PASSWORD: str = getenv("DB_PASSWORD")
-    DB_HOST: str = getenv("DB_HOST", "localhost")
-    DB_PORT: str = getenv("DB_PORT", "5432")
-    DB_NAME: str = getenv("DB_NAME")
-    FAST2SMS_API_KEY: str = getenv("FAST2SMS_API_KEY")
+    # Database settings
+    DB_NAME = os.getenv("DB_NAME", "backend_db")
+    DB_USER = os.getenv("DB_USER", "postgres")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = os.getenv("DB_PORT", "5432")
 
-    # Supabase Configuration
-    SUPABASE_URL: str = getenv("SUPABASE_URL")
-    SUPABASE_KEY: str = getenv("SUPABASE_KEY")
-    SUPABASE_SERVICE_KEY: str = getenv("SUPABASE_SERVICE_KEY")
-    SUPABASE_JWT_SECRET: str = getenv("SUPABASE_JWT_SECRET")
+    # Supabase settings
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
     # Optional: Supabase Managed Postgres
-    SUPABASE_DB_HOST: str = getenv("SUPABASE_DB_HOST")
-    SUPABASE_DB_PORT: str = getenv("SUPABASE_DB_PORT", "5432")
-    SUPABASE_DB_NAME: str = getenv("SUPABASE_DB_NAME", "postgres")
-    SUPABASE_DB_USER: str = getenv("SUPABASE_DB_USER", "postgres")
-    SUPABASE_DB_PASSWORD: str = getenv("SUPABASE_DB_PASSWORD")
+    SUPABASE_DB_HOST = os.getenv("SUPABASE_DB_HOST")
+    SUPABASE_DB_PORT = os.getenv("SUPABASE_DB_PORT", "5432")
+    SUPABASE_DB_NAME = os.getenv("SUPABASE_DB_NAME")
+    SUPABASE_DB_USER = os.getenv("SUPABASE_DB_USER")
+    SUPABASE_DB_PASSWORD = os.getenv("SUPABASE_DB_PASSWORD")
+
+    @classmethod
+    def validate(cls):
+        """Validate required configuration"""
+        required = ["SUPABASE_URL", "SUPABASE_KEY"]
+        missing = [key for key in required if not getattr(cls, key)]
+        if missing:
+            raise ValueError(f"Missing required configuration: {', '.join(missing)}")
