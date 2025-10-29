@@ -11,7 +11,6 @@ from datetime import timedelta
 from decimal import Decimal
 import calendar
 from core.permissions import IsShopkeeper
-from core.services import NotificationService
 from .models import Notification, SupportTicket
 from .serializers import (
     OrderDetailSerializer,
