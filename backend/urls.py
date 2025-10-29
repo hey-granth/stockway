@@ -3,12 +3,9 @@ from django.urls import path, include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/accounts/", include("accounts.urls")),
-    # Uncomment the lines below when you're ready to add these apps
-    # path('api/inventory/', include('inventory.urls')),
-    # path('api/orders/', include('orders.urls')),
-    # path('api/payments/', include('payments.urls')),
-    # path('api/warehouses/', include('warehouses.urls')),
-    # path('api/riders/', include('riders.urls')),
-    # path('api/shopkeepers/', include('shopkeepers.urls')),
+    path("api/auth/", include("accounts.urls")),
+    path("api/inventory/", include("inventory.urls")),
+    path("api/orders/", include("orders.urls")),
+    path("api/warehouses/", include("warehouses.urls")),
+    path("api/shopkeepers/", include("shopkeepers.urls")),
 ]

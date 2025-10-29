@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.gis",  # PostGIS support
     "rest_framework",
-    "rest_framework.authtoken",
     "corsheaders",
     "django_filters",
     "core",  # Core utilities and shared code
@@ -97,11 +96,6 @@ DATABASES = {
         "PORT": Config.DB_PORT,
     }
 }
-
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",

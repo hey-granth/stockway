@@ -250,23 +250,3 @@ class SupabaseService:
         except Exception as e:
             logger.error(f"Failed to get user: {str(e)}")
             raise Exception(f"Failed to get user: {str(e)}")
-
-    @classmethod
-    def refresh_session(cls, refresh_token: str) -> Dict[str, Any]:
-        """
-        Refresh user session
-
-        Args:
-            refresh_token: User's refresh token
-
-        Returns:
-            New session data
-        """
-        try:
-            client = cls.get_client()
-            response = client.auth.refresh_session(refresh_token)
-            logger.info("Session refreshed successfully")
-            return response
-        except Exception as e:
-            logger.error(f"Failed to refresh session: {str(e)}")
-            raise Exception(f"Failed to refresh session: {str(e)}")

@@ -8,7 +8,6 @@ from accounts.serializers import (
     SendOTPSerializer,
     VerifyOTPSerializer,
     UserSerializer,
-    RefreshTokenSerializer,
 )
 import logging
 
@@ -171,64 +170,6 @@ class LogoutView(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-class RefreshTokenView(APIView):
-    """
-    Refresh authentication tokens
-    """
-
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        """
-        Refresh tokens using refresh token
-
-        Request body:
-        {
-            "refresh_token": "refresh_token_here"
-        }
-        """
-        serializer = RefreshTokenSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(
-                {"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        refresh_token = serializer.validated_data["refresh_token"]
-
-        try:
-            supabase_response = SupabaseService.refresh_session(refresh_token)
-
-            session_data = (
-                supabase_response.session
-                if hasattr(supabase_response, "session")
-                else supabase_response.get("session")
-            )
-
-            response_data = {
-                "access_token": session_data.access_token
-                if hasattr(session_data, "access_token")
-                else session_data.get("access_token"),
-                "refresh_token": session_data.refresh_token
-                if hasattr(session_data, "refresh_token")
-                else session_data.get("refresh_token"),
-                "expires_in": session_data.expires_in
-                if hasattr(session_data, "expires_in")
-                else session_data.get("expires_in"),
-                "expires_at": session_data.expires_at
-                if hasattr(session_data, "expires_at")
-                else session_data.get("expires_at"),
-                "token_type": session_data.token_type
-                if hasattr(session_data, "token_type")
-                else session_data.get("token_type"),
-            }
-
-            return Response(response_data, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error(f"Token refresh failed: {str(e)}")
-            return Response({"error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class CurrentUserView(APIView):

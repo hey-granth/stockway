@@ -122,20 +122,3 @@ class ShopkeeperProfileSerializer(serializers.ModelSerializer):
             validated_data["location"] = Point(longitude, latitude, srid=4326)
 
         return super().update(instance, validated_data)
-
-
-class AuthResponseSerializer(serializers.Serializer):
-    """Serializer for authentication response"""
-
-    access_token = serializers.CharField()
-    refresh_token = serializers.CharField()
-    expires_in = serializers.IntegerField()
-    expires_at = serializers.IntegerField(required=False)
-    token_type = serializers.CharField()
-    user = UserSerializer()
-
-
-class RefreshTokenSerializer(serializers.Serializer):
-    """Serializer for refreshing tokens"""
-
-    refresh_token = serializers.CharField(required=True)
