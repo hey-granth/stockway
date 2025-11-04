@@ -4,9 +4,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0013_enable_rls_user_permissions'),
+        ("accounts", "0013_enable_rls_user_permissions"),
     ]
 
     operations = [
@@ -72,9 +71,8 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Admins can manage users" ON users;
                 DROP POLICY IF EXISTS "Public can view basic user info" ON users;
                 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
-
         # Enable RLS on shopkeeper_profiles table
         migrations.RunSQL(
             sql="""
@@ -128,7 +126,6 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Shopkeepers can manage own profile" ON shopkeeper_profiles;
                 DROP POLICY IF EXISTS "Warehouse managers can view profiles" ON shopkeeper_profiles;
                 ALTER TABLE shopkeeper_profiles DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
     ]
-

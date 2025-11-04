@@ -98,7 +98,7 @@ class AuthenticationAPITest(TestCase):
         mock_response.user.id = "supabase-user-id"
         mock_response.session.access_token = "access_token"
         mock_response.session.refresh_token = "refresh_token"
-        mock_response.session.expires_in = 3600
+        mock_response.session.expires_in = 36000
         mock_response.session.expires_at = 1698432000
         mock_response.session.token_type = "bearer"
 

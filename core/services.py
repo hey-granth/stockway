@@ -168,46 +168,60 @@ class SupabaseService:
         return cls._client
 
     @classmethod
-    def send_otp(cls, phone: str) -> Dict[str, Any]:
+    def send_otp(cls, email: str) -> Dict[str, Any]:
         """
-        Send OTP to phone number
+        Send OTP to email (6-digit code, not magic link)
 
         Args:
-            phone: Phone number in E.164 format (e.g., +1234567890)
+            email: Email address
 
         Returns:
             Response from Supabase
         """
         try:
             client = cls.get_client()
-            response = client.auth.sign_in_with_otp({"phone": phone})
-            logger.info(f"OTP sent to {phone}")
+            logger.debug(f"Attempting to send OTP to email: {email}")
+
+            # Send OTP code (not magic link) to email
+            # The user will receive a 6-digit code to enter manually
+            response = client.auth.sign_in_with_otp(
+                {
+                    "email": email,
+                    "options": {
+                        "should_create_user": True,
+                        "email_redirect_to": None,  # Disable redirect URL
+                    },
+                }
+            )
+            logger.info(f"OTP code sent successfully to {email}")
             return {"success": True, "message": "OTP sent successfully"}
         except Exception as e:
-            logger.error(f"Failed to send OTP to {phone}: {str(e)}")
+            logger.error(f"Failed to send OTP to {email}: {str(e)}", exc_info=True)
             raise Exception(f"Failed to send OTP: {str(e)}")
 
     @classmethod
-    def verify_otp(cls, phone: str, token: str) -> Dict[str, Any]:
+    def verify_otp(cls, email: str, token: str) -> Dict[str, Any]:
         """
-        Verify OTP for phone number
+        Verify OTP for email
 
         Args:
-            phone: Phone number in E.164 format
-            token: OTP token received via SMS
+            email: Email address
+            token: OTP token received via email
 
         Returns:
             User session data from Supabase
         """
         try:
             client = cls.get_client()
+            logger.debug(f"Attempting to verify OTP for email: {email}")
+
             response = client.auth.verify_otp(
-                {"phone": phone, "token": token, "type": "sms"}
+                {"email": email, "token": token, "type": "email"}
             )
-            logger.info(f"OTP verified for {phone}")
+            logger.info(f"OTP verified successfully for {email}")
             return response
         except Exception as e:
-            logger.error(f"Failed to verify OTP for {phone}: {str(e)}")
+            logger.error(f"Failed to verify OTP for {email}: {str(e)}", exc_info=True)
             raise Exception(f"Invalid or expired OTP: {str(e)}")
 
     @classmethod
@@ -223,13 +237,15 @@ class SupabaseService:
         """
         try:
             client = cls.get_client()
+            logger.debug(f"Attempting to sign out user")
+
             # Set the session with the access token
             client.auth.set_session(access_token, access_token)
             client.auth.sign_out()
             logger.info("User signed out successfully")
             return {"success": True, "message": "Signed out successfully"}
         except Exception as e:
-            logger.error(f"Failed to sign out: {str(e)}")
+            logger.error(f"Failed to sign out: {str(e)}", exc_info=True)
             raise Exception(f"Sign out failed: {str(e)}")
 
     @classmethod
@@ -245,8 +261,11 @@ class SupabaseService:
         """
         try:
             client = cls.get_client()
+            logger.debug(f"Attempting to get user from access token")
+
             response = client.auth.get_user(access_token)
+            logger.debug(f"Successfully retrieved user data")
             return response
         except Exception as e:
-            logger.error(f"Failed to get user: {str(e)}")
+            logger.error(f"Failed to get user: {str(e)}", exc_info=True)
             raise Exception(f"Failed to get user: {str(e)}")

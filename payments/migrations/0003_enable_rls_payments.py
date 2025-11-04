@@ -4,9 +4,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('payments', '0002_alter_payment_payee'),
+        ("payments", "0002_alter_payment_payee"),
     ]
 
     operations = [
@@ -132,7 +131,6 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Riders can view their payouts" ON payments_payment;
                 DROP POLICY IF EXISTS "Staff can view all payments" ON payments_payment;
                 ALTER TABLE payments_payment DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
     ]
-

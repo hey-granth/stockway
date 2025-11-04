@@ -38,6 +38,11 @@
   - **400**: `{ "error": "Order cannot be delivered." }`
   - **404**: `{ "error": "Order not found." }`
 
+## Technical Notes
+- **User Model**: The custom User model uses `phone_number` as the primary identifier (not username)
+- **Rider Profile String Representation**: Displayed as "Rider profile for {user.phone_number}"
+- **Warehouse Relationship**: `warehouse` field is a ForeignKey to Warehouse model, can be null/blank
+
 ## Notes
 - Orders payload adheres to `orders.OrderSerializer` in orders app.
 - Warehouse admins assign riders via `/warehouse/<warehouse_id>/orders/<order_id>/assign/` (see Warehouses API).

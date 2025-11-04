@@ -14,4 +14,4 @@ class RiderProfile(models.Model):
     payment_info: str = models.TextField()
 
     def __str__(self):
-        return f"Rider profile for {self.user.username}"
+        return f"Rider profile for {self.user.phone_number}"

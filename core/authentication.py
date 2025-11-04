@@ -67,6 +67,11 @@ class SupabaseAuthentication(BaseAuthentication):
             if hasattr(supabase_user, "id")
             else supabase_user.get("id")
         )
+        email = (
+            supabase_user.email
+            if hasattr(supabase_user, "email")
+            else supabase_user.get("email")
+        )
         phone = (
             supabase_user.phone
             if hasattr(supabase_user, "phone")
@@ -76,11 +81,17 @@ class SupabaseAuthentication(BaseAuthentication):
         try:
             # Try to find user by supabase_uid
             user = User.objects.get(supabase_uid=supabase_uid)
+            logger.debug(f"Found existing user with supabase_uid: {supabase_uid}")
         except User.DoesNotExist:
-            # Create new user
+            # Create new user with email (primary) or phone (fallback)
             user = User.objects.create(
-                phone_number=phone, supabase_uid=supabase_uid, is_active=True
+                email=email if email else f"{supabase_uid}@placeholder.local",
+                phone_number=phone,
+                supabase_uid=supabase_uid,
+                is_active=True,
             )
-            logger.info(f"Created new user for phone: {phone}")
+            logger.info(
+                f"Created new user for email: {email or 'N/A'}, phone: {phone or 'N/A'}"
+            )
 
         return user

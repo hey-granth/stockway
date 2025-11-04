@@ -4,9 +4,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('riders', '0001_initial'),
+        ("riders", "0001_initial"),
     ]
 
     operations = [
@@ -104,7 +103,6 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Warehouse managers can view riders" ON riders_riderprofile;
                 DROP POLICY IF EXISTS "Staff can manage all rider profiles" ON riders_riderprofile;
                 ALTER TABLE riders_riderprofile DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
     ]
-

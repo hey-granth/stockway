@@ -4,9 +4,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0012_shopkeeperprofile_shop_address_and_more'),
+        ("accounts", "0012_shopkeeperprofile_shop_address_and_more"),
     ]
 
     operations = [
@@ -67,9 +66,8 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Admins can manage all permissions" ON users_user_permissions;
                 DROP POLICY IF EXISTS "Service role has full access to permissions" ON users_user_permissions;
                 ALTER TABLE users_user_permissions DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
-
         # Enable RLS on users_groups table (another Django PermissionsMixin table)
         migrations.RunSQL(
             sql="""
@@ -127,7 +125,6 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Admins can manage all groups" ON users_groups;
                 DROP POLICY IF EXISTS "Service role has full access to groups" ON users_groups;
                 ALTER TABLE users_groups DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
     ]
-

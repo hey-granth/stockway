@@ -153,7 +153,7 @@ class SupabaseStorage:
 
     @classmethod
     def create_signed_url(
-        cls, bucket_name: str, file_path: str, expires_in: int = 3600
+        cls, bucket_name: str, file_path: str, expires_in: int = 36000
     ) -> Dict[str, Any]:
         """
         Create a signed URL for private files (expires after specified time).

@@ -624,11 +624,53 @@ All endpoints may return the following error responses:
 
 ---
 
+## Technical Implementation Details
+
+### Recent Updates (October 2025)
+
+The following technical improvements have been implemented:
+
+#### 1. **User Model Structure**
+- The custom User model uses `phone_number` as the `USERNAME_FIELD`
+- No `username` field exists; authentication is phone-based
+- User identification in all responses uses `phone_number`
+
+#### 2. **Order-Warehouse Relationship**
+- The `Order.warehouse` field is a ForeignKey to the `Warehouse` model (not User)
+- This provides direct access to warehouse attributes:
+  - `order.warehouse.name` - Warehouse name
+  - `order.warehouse.address` - Warehouse address
+  - `order.warehouse.location` - PostGIS Point field for geospatial queries
+
+#### 3. **PostGIS Distance Calculations**
+- Warehouse proximity features use PostGIS for accurate distance calculations
+- Two Distance classes are used:
+  - `django.contrib.gis.db.models.functions.Distance` - For database annotations
+  - `django.contrib.gis.measure.Distance` - For distance measurements (e.g., `Distance(km=10)`)
+- Distance calculations return values in kilometers with 2 decimal precision
+
+#### 4. **Query Parameters**
+- All list views support Django Rest Framework's `query_params` for filtering
+- Common filters include: `status`, `start_date`, `end_date`, `ordering`, `page`, `page_size`
+- The API uses DRF's Request wrapper (not Django's HttpRequest) which provides `query_params`
+
+### Database Schema Notes
+
+- **Users Table**: Custom user model with phone-based auth (no username field)
+- **Orders Table**: `warehouse` field is ForeignKey to `warehouses_warehouse` table
+- **Location Fields**: PostGIS PointField for geographic data (SRID 4326)
+- **Distance Annotations**: Use PostGIS's Distance function for km-based calculations
+
+---
+
 ## Notes
 
-1. All datetime fields are in ISO 8601 format (UTC timezone)
-2. All amount fields are strings representing decimal values
-3. Pagination uses the standard DRF format with `count`, `next`, `previous`, and `results`
-4. All endpoints require authentication with a valid JWT token
-5. The shopkeeper must have completed their profile (including location) to use warehouse proximity features
+1. **Authentication**: All datetime fields are in ISO 8601 format (UTC timezone)
+2. **Data Types**: All amount fields are strings representing decimal values
+3. **Pagination**: Uses the standard DRF format with `count`, `next`, `previous`, and `results`
+4. **Authorization**: All endpoints require authentication with a valid JWT token
+5. **Location Services**: The shopkeeper must have completed their profile (including location) to use warehouse proximity features
+6. **User Identification**: The custom User model uses `phone_number` as the primary identifier (not username)
+7. **Warehouse References**: All order warehouse fields reference the Warehouse model (not User), providing access to warehouse name, address, and location data
+8. **PostGIS Integration**: Distance calculations for nearby warehouses use PostGIS geographic functions for accurate kilometer-based measurements
 

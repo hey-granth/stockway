@@ -25,7 +25,7 @@ class Order(models.Model):
     shopkeeper: User = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders"
     )
-    warehouse: User = models.ForeignKey(
+    warehouse: Warehouse = models.ForeignKey(
         Warehouse, on_delete=models.CASCADE, related_name="orders"
     )
     status: str = models.CharField(
@@ -38,7 +38,7 @@ class Order(models.Model):
     updated_at: datetime = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Order #{self.id} by {self.shopkeeper.username}"
+        return f"Order #{self.id} by {self.shopkeeper.phone_number}"
 
 
 class OrderItem(models.Model):

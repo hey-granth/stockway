@@ -11,6 +11,7 @@ from accounts.serializers import (
 )
 import logging
 
+
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
@@ -18,18 +19,18 @@ User = get_user_model()
 
 class SendOTPView(APIView):
     """
-    Send OTP to phone number for authentication
+    Send OTP to email for authentication
     """
 
     permission_classes = [AllowAny]
 
     def post(self, request):
         """
-        Send OTP to the provided phone number
+        Send OTP to the provided email
 
         Request body:
         {
-            "phone_number": "+1234567890"
+            "email": "user@example.com"
         }
         """
         serializer = SendOTPSerializer(data=request.data)
@@ -39,15 +40,16 @@ class SendOTPView(APIView):
                 {"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        phone_number = serializer.validated_data["phone_number"]
+        email = serializer.validated_data["email"]
 
         try:
-            result = SupabaseService.send_otp(phone_number)
+            logger.info(f"OTP send request received for email: {email}")
+            result = SupabaseService.send_otp(email)
             return Response(
                 {
                     "success": True,
-                    "message": "OTP sent successfully to your phone",
-                    "phone_number": phone_number,
+                    "message": "OTP sent successfully to your email",
+                    "email": email,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -71,7 +73,7 @@ class VerifyOTPView(APIView):
 
         Request body:
         {
-            "phone_number": "+1234567890",
+            "email": "user@example.com",
             "otp": "123456"
         }
         """
@@ -82,12 +84,14 @@ class VerifyOTPView(APIView):
                 {"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        phone_number = serializer.validated_data["phone_number"]
+        email = serializer.validated_data["email"]
         otp = serializer.validated_data["otp"]
 
         try:
+            logger.info(f"Attempting OTP verification for email: {email}")
+
             # Verify OTP with Supabase
-            supabase_response = SupabaseService.verify_otp(phone_number, otp)
+            supabase_response = SupabaseService.verify_otp(email, otp)
 
             # Access user data from response
             user_data = (
@@ -110,11 +114,13 @@ class VerifyOTPView(APIView):
             user_id = user_data.id if hasattr(user_data, "id") else user_data.get("id")
             user, created = User.objects.get_or_create(
                 supabase_uid=user_id,
-                defaults={"phone_number": phone_number, "is_active": True},
+                defaults={"email": email, "is_active": True},
             )
 
             if created:
-                logger.info(f"New user created: {phone_number}")
+                logger.info(f"New user created during OTP verification: {email}")
+            else:
+                logger.debug(f"Existing user authenticated: {email}")
 
             # Prepare response
             response_data = {
@@ -136,6 +142,9 @@ class VerifyOTPView(APIView):
                 "user": UserSerializer(user).data,
             }
 
+            logger.info(
+                f"OTP verification successful for user: {email}, user_id: {user.id}"
+            )
             return Response(response_data, status=status.HTTP_200_OK)
 
         except Exception as e:

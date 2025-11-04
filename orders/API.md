@@ -36,5 +36,10 @@
 - **OrderSerializer** fields: `id`, `shopkeeper`, `warehouse`, `status`, `total_amount`, `order_items[]`, `created_at`, `updated_at`
 - **OrderItem** fields: `id`, `order`, `item`, `item_name`, `quantity`, `price`
 
+## Technical Notes
+- **Warehouse Field**: The `warehouse` field in Order model is a ForeignKey to `Warehouse` (not User), providing access to warehouse.name, warehouse.address, and warehouse.location
+- **User Model**: Uses `phone_number` as the primary identifier (not username)
+- **Order String Representation**: Orders are displayed as "Order #{id} by {shopkeeper.phone_number}"
+
 ## Notes
 - This app provides the minimal order flows; the customer-facing endpoints with filters, pagination, tracking, and cancellations are under `/shopkeeper/`.

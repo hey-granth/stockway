@@ -4,9 +4,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('shopkeepers', '0002_alter_notification_options_and_more'),
+        ("shopkeepers", "0002_alter_notification_options_and_more"),
     ]
 
     operations = [
@@ -77,9 +76,8 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Users can update own notifications" ON notifications;
                 DROP POLICY IF EXISTS "Staff can manage all notifications" ON notifications;
                 ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
-
         # Enable RLS on support_tickets table
         migrations.RunSQL(
             sql="""
@@ -167,7 +165,6 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Users can update own tickets" ON support_tickets;
                 DROP POLICY IF EXISTS "Staff can manage all tickets" ON support_tickets;
                 ALTER TABLE support_tickets DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
     ]
-

@@ -4,9 +4,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('warehouses', '0003_warehouse_location_and_more'),
+        ("warehouses", "0003_warehouse_location_and_more"),
     ]
 
     operations = [
@@ -78,7 +77,6 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Warehouse admins can manage own warehouse" ON warehouses_warehouse;
                 DROP POLICY IF EXISTS "Staff can manage all warehouses" ON warehouses_warehouse;
                 ALTER TABLE warehouses_warehouse DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
     ]
-

@@ -4,9 +4,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('orders', '0001_initial'),
+        ("orders", "0001_initial"),
     ]
 
     operations = [
@@ -106,9 +105,8 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Staff can view all orders" ON orders_order;
                 DROP POLICY IF EXISTS "Warehouse managers can manage warehouse orders" ON orders_order;
                 ALTER TABLE orders_order DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
-
         # Enable RLS on orders_orderitem table
         migrations.RunSQL(
             sql="""
@@ -193,7 +191,6 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Users can view items from accessible orders" ON orders_orderitem;
                 DROP POLICY IF EXISTS "Users can manage items in accessible orders" ON orders_orderitem;
                 ALTER TABLE orders_orderitem DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
     ]
-

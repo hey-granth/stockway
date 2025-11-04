@@ -7,50 +7,30 @@ User = get_user_model()
 
 
 class SendOTPSerializer(serializers.Serializer):
-    """Serializer for sending OTP to phone number"""
+    """Serializer for sending OTP to email"""
 
-    phone_number = serializers.CharField(
-        max_length=20,
+    email = serializers.EmailField(
         required=True,
-        help_text="Phone number in E.164 format (e.g., +1234567890)",
+        help_text="Email address to send OTP to",
     )
 
-    def validate_phone_number(self, value):
-        """Validate phone number format"""
-        # Basic validation - should start with +
-        if not value.startswith("+"):
-            raise serializers.ValidationError(
-                "Phone number must be in E.164 format (e.g., +1234567890)"
-            )
-        # Remove + and check if remaining is digits
-        if not value[1:].isdigit():
-            raise serializers.ValidationError(
-                "Phone number must contain only digits after +"
-            )
-        return value
+    def validate_email(self, value):
+        """Validate email format"""
+        # EmailField already validates format, just return
+        return value.lower()
 
 
 class VerifyOTPSerializer(serializers.Serializer):
     """Serializer for verifying OTP"""
 
-    phone_number = serializers.CharField(
-        max_length=20, required=True, help_text="Phone number in E.164 format"
-    )
+    email = serializers.EmailField(required=True, help_text="Email address")
     otp = serializers.CharField(
-        max_length=6, required=True, help_text="6-digit OTP received via SMS"
+        max_length=6, required=True, help_text="6-digit OTP received via email"
     )
 
-    def validate_phone_number(self, value):
-        """Validate phone number format"""
-        if not value.startswith("+"):
-            raise serializers.ValidationError(
-                "Phone number must be in E.164 format (e.g., +1234567890)"
-            )
-        if not value[1:].isdigit():
-            raise serializers.ValidationError(
-                "Phone number must contain only digits after +"
-            )
-        return value
+    def validate_email(self, value):
+        """Validate email format"""
+        return value.lower()
 
     def validate_otp(self, value):
         """Validate OTP format"""

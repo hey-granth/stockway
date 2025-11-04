@@ -4,9 +4,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0001_initial'),
+        ("inventory", "0001_initial"),
     ]
 
     operations = [
@@ -84,7 +83,6 @@ class Migration(migrations.Migration):
                 DROP POLICY IF EXISTS "Warehouse admins can manage own inventory" ON inventory_item;
                 DROP POLICY IF EXISTS "Staff can manage all inventory" ON inventory_item;
                 ALTER TABLE inventory_item DISABLE ROW LEVEL SECURITY;
-            """
+            """,
         ),
     ]
-

@@ -8,39 +8,46 @@ from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
-    """Custom user manager for phone-based authentication"""
+    """Custom user manager for email-based authentication"""
 
-    def create_user(self, phone_number, password=None, **extra_fields):
-        """Create and save a regular user with phone number"""
-        if not phone_number:
-            raise ValueError("The Phone Number field must be set")
+    def create_user(self, email=None, phone_number=None, password=None, **extra_fields):
+        """Create and save a regular user with email"""
+        if not email and not phone_number:
+            raise ValueError("Either email or phone number must be set")
+
+        if email:
+            email = self.normalize_email(email)
 
         extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
 
-        user = self.model(phone_number=phone_number, **extra_fields)
+        user = self.model(email=email, phone_number=phone_number, **extra_fields)
         if password:
             user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone_number, password=None, **extra_fields):
-        """Create and save a superuser with phone number"""
+    def create_superuser(
+        self, email=None, phone_number=None, password=None, **extra_fields
+    ):
+        """Create and save a superuser with email"""
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("role", "ADMIN")
 
-        if extra_fields.get("is_staff") is not True:
+        if not extra_fields.get("is_staff"):
             raise ValueError("Superuser must have is_staff=True.")
-        if extra_fields.get("is_superuser") is not True:
+        if not extra_fields.get("is_superuser"):
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self.create_user(phone_number, password, **extra_fields)
+        return self.create_user(
+            email=email, phone_number=phone_number, password=password, **extra_fields
+        )
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """Custom User model with phone-based authentication"""
+    """Custom User model with email-based authentication"""
 
     ROLE_CHOICES = [
         ("SHOPKEEPER", "Shopkeeper"),
@@ -49,11 +56,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("ADMIN", "Admin"),
     ]
 
-    phone_number = models.CharField(max_length=20, unique=True, db_index=True)
+    phone_number = models.CharField(
+        max_length=20, unique=True, null=True, blank=True, db_index=True
+    )
     supabase_uid = models.CharField(
         max_length=255, unique=True, null=True, blank=True, db_index=True
     )
-    email = models.EmailField(blank=True, null=True)
+    email = models.EmailField(unique=True, db_index=True)
     full_name = models.CharField(max_length=255, blank=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="SHOPKEEPER")
 
@@ -66,7 +75,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    USERNAME_FIELD = "phone_number"
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     class Meta:
@@ -75,13 +84,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = "Users"
 
     def __str__(self):
-        return self.phone_number
+        return self.email or self.phone_number or str(self.id)
 
     def get_full_name(self):
-        return self.full_name or self.phone_number
+        return self.full_name or self.email
 
     def get_short_name(self):
-        return self.phone_number
+        return self.email
 
 
 class ShopkeeperProfile(models.Model):
@@ -104,4 +113,4 @@ class ShopkeeperProfile(models.Model):
         verbose_name_plural = "Shopkeeper Profiles"
 
     def __str__(self):
-        return f"{self.shop_name} - {self.user.phone_number}"
+        return f"{self.shop_name} - {self.user.email or self.user.phone_number}"

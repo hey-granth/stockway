@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Sum, Count, Q, Avg
 from django.utils import timezone
+from django.contrib.gis.db.models.functions import Distance as DistanceFunc
 from django.contrib.gis.measure import Distance
 from datetime import timedelta
 from decimal import Decimal
@@ -376,9 +377,10 @@ class ShopkeeperNearbyWarehousesView(APIView):
         # Find nearby warehouses using PostGIS
         nearby_warehouses = (
             Warehouse.objects.filter(
-                location__distance_lte=(profile.location, Distance(km=radius))
+                location__distance_lte=(profile.location, Distance(km=radius)),
+                location__isnull=False,
             )
-            .annotate(distance=Distance("location", profile.location))
+            .annotate(distance=DistanceFunc("location", profile.location))
             .order_by("distance")
         )
 

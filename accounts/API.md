@@ -2,11 +2,11 @@
 
 ## Authentication Endpoints
 
-All authentication is handled through Supabase using phone number and OTP (One-Time Password).
+All authentication is handled through Supabase using email and OTP (One-Time Password).
 
 ### Base URL
 ```
-/api/accounts/
+/api/auth/
 ```
 
 ### Notes
@@ -18,16 +18,21 @@ All authentication is handled through Supabase using phone number and OTP (One-T
 
 ## 1. Send OTP
 
-Send an OTP to a phone number for authentication.
+Send an OTP to an email address for authentication.
 
-**Endpoint:** `POST /api/accounts/send-otp/`
+**Endpoint:** `POST /api/auth/send-otp/`
 
 **Authentication:** None required
+
+**Headers:**
+```
+Content-Type: application/json
+```
 
 **Request Body:**
 ```json
 {
-  "phone_number": "+1234567890"
+  "email": "user@example.com"
 }
 ```
 
@@ -35,8 +40,8 @@ Send an OTP to a phone number for authentication.
 ```json
 {
   "success": true,
-  "message": "OTP sent successfully to your phone",
-  "phone_number": "+1234567890"
+  "message": "OTP sent successfully to your email",
+  "email": "user@example.com"
 }
 ```
 
@@ -44,7 +49,7 @@ Send an OTP to a phone number for authentication.
 ```json
 {
   "error": {
-    "phone_number": ["Phone number must be in E.164 format (e.g., +1234567890)"]
+    "email": ["Enter a valid email address."]
   }
 }
 ```
@@ -54,15 +59,20 @@ Send an OTP to a phone number for authentication.
 ## 2. Verify OTP
 
 Verify the OTP and get authentication tokens.
+**Headers:**
+```
+Content-Type: application/json
+```
 
-**Endpoint:** `POST /api/accounts/verify-otp/`
+
+**Endpoint:** `POST /api/auth/verify-otp/`
 
 **Authentication:** None required
 
 **Request Body:**
 ```json
 {
-  "phone_number": "+1234567890",
+  "email": "user@example.com",
   "otp": "123456"
 }
 ```
@@ -72,19 +82,36 @@ Verify the OTP and get authentication tokens.
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expires_in": 3600,
+  "expires_in": 36000,
   "expires_at": 1698432000,
   "token_type": "bearer",
   "user": {
     "id": 1,
-    "phone_number": "+1234567890",
-    "email": null,
+    "phone_number": null,
+**Error Response (400 Bad Request):**
+```json
+{
+  "error": {
+    "otp": ["OTP must contain only digits"]
+  }
+}
+```
+
+    "email": "user@example.com",
     "full_name": "",
     "role": "SHOPKEEPER",
     "is_active": true,
-    "date_joined": "2025-10-27T10:30:00Z",
+    "date_joined": "2025-10-30T10:30:00Z",
     "last_login": null
   }
+**Error Response (415 Unsupported Media Type):**
+```json
+{
+  "detail": "Unsupported media type \"text/plain\" in request."
+}
+```
+*Note: This error occurs when the `Content-Type: application/json` header is missing from the request.*
+
 }
 ```
 
@@ -97,11 +124,12 @@ Verify the OTP and get authentication tokens.
 
 ---
 
+Content-Type: application/json
 ## 3. Logout
 
 Invalidate the current session.
 
-**Endpoint:** `POST /api/accounts/logout/`
+**Endpoint:** `POST /api/auth/logout/`
 
 **Authentication:** Required (Bearer token)
 
@@ -124,7 +152,7 @@ Authorization: Bearer <access_token>
 
 Get the currently authenticated user's details.
 
-**Endpoint:** `GET /api/accounts/me/`
+**Endpoint:** `GET /api/auth/me/`
 
 **Authentication:** Required (Bearer token)
 
@@ -152,10 +180,10 @@ Authorization: Bearer <access_token>
 ## Authentication Flow
 
 ### Initial Login
-1. User provides phone number
-2. Call `POST /api/accounts/send-otp/` with phone number
-3. User receives OTP via SMS
-4. Call `POST /api/accounts/verify-otp/` with phone number and OTP
+1. User provides email address
+2. Call `POST /api/auth/send-otp/` with email
+3. User receives OTP via email
+4. Call `POST /api/auth/verify-otp/` with email and OTP
 5. Store `access_token` and `refresh_token` on client (managed by Supabase SDK)
 
 ### Authenticated Requests
@@ -170,21 +198,18 @@ Authorization: Bearer <access_token>
 - No manual token refresh endpoint is needed on the backend
 
 ### Logout
-Call `POST /api/accounts/logout/` with the access token in the Authorization header
+Call `POST /api/auth/logout/` with the access token in the Authorization header
 
 ---
 
-## Phone Number Format
+## Email Format
 
-All phone numbers must be in **E.164 format**:
-- Start with `+`
-- Country code + number
-- No spaces or special characters
+All emails must be valid email addresses in standard format.
 
 Examples:
-- US: `+12025551234`
-- India: `+919876543210`
-- UK: `+447700900123`
+- `user@example.com`
+- `john.doe@company.co.uk`
+- `contact+test@domain.org`
 
 ---
 
@@ -194,4 +219,30 @@ Examples:
 - `RIDER` - Delivery rider
 - `WAREHOUSE_MANAGER` - Warehouse manager
 - `ADMIN` - System administrator
+
+---
+
+## Technical Implementation
+
+### User Model Structure
+- **USERNAME_FIELD**: `phone_number` (not `username`)
+- **Primary Identifier**: Phone number in E.164 format
+- **No Username Field**: The custom User model does not have a `username` field
+- **Authentication Method**: Phone-based OTP via Supabase
+- **User String Representation**: Returns `phone_number`
+- **Available Methods**:
+  - `get_full_name()` - Returns `full_name` or `phone_number` if name not set
+  - `get_short_name()` - Returns `phone_number`
+
+### ShopkeeperProfile Model
+- **Relationship**: OneToOne with User model
+- **Location Field**: PostGIS PointField for geographic coordinates
+- **Key Fields**: `shop_name`, `shop_address`, `location`, `gst_number`, `is_verified`
+- **Table Name**: `shopkeeper_profiles`
+
+### Database Schema
+- **Users Table**: `users` (custom table name, not `auth_user`)
+- **Location Fields**: Use PostGIS geography type (SRID 4326)
+- **Indexes**: Created on `phone_number` and `supabase_uid` for performance
+
 
