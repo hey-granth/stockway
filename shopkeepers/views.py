@@ -345,21 +345,24 @@ class ShopkeeperInventoryBrowseView(generics.ListAPIView):
 
 class ShopkeeperNearbyWarehousesView(APIView):
     """
-    Get nearby warehouses based on user's GPS coordinates.
+    Get the nearest warehouse based on user's GPS coordinates (optimized with caching).
 
     GET /api/shopkeeper/warehouses/nearby/
     Query params:
         - latitude (required): User's GPS latitude
         - longitude (required): User's GPS longitude
-        - radius (optional): Search radius in kilometers (default: 10)
+        - radius (optional): Search radius in kilometers (default: 10, range: 1-50)
 
-    Returns top 10 nearest warehouses ordered by proximity.
+    Returns the single closest warehouse within radius with total count.
+    Uses PostGIS spatial index and Redis caching (5 minutes).
     """
 
     permission_classes = [IsAuthenticated, IsShopkeeper]
 
     def get(self, request):
         from django.contrib.gis.geos import Point
+        from django.core.cache import cache
+        import hashlib
 
         # Get and validate coordinates from query parameters
         latitude = request.query_params.get("latitude")
@@ -403,43 +406,73 @@ class ShopkeeperNearbyWarehousesView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Create Point from user coordinates (longitude, latitude order for PostGIS)
-        user_location = Point(lon, lat, srid=4326)
-
-        # Get radius from query params (default 10km)
+        # Get and validate radius from query params (default 10km, range 1-50km)
         try:
             radius = float(request.query_params.get("radius", 10))
-            if radius <= 0:
-                raise ValueError("Radius must be positive")
+            if radius < 1 or radius > 50:
+                return Response(
+                    {"error": "Invalid radius. Radius must be between 1 and 50 kilometers."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         except (ValueError, TypeError):
             return Response(
-                {"error": "Invalid radius. Radius must be a positive number."},
+                {"error": "Invalid radius. Radius must be a valid number."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Find nearby warehouses using PostGIS ST_DistanceSphere
-        # DistanceFunc uses ST_DistanceSphere for geography fields
+        # Create cache key from coordinates and radius (rounded to 4 decimal places for better cache hits)
+        cache_key_data = f"nearby_warehouse:{round(lat, 4)}:{round(lon, 4)}:{radius}"
+        cache_key = hashlib.md5(cache_key_data.encode()).hexdigest()
+
+        # Try to get cached result
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            return Response(cached_result, status=status.HTTP_200_OK)
+
+        # Create Point from user coordinates (longitude, latitude order for PostGIS)
+        user_location = Point(lon, lat, srid=4326)
+
+        # Find all nearby warehouses within radius using PostGIS Distance
+        # Filter only active and approved warehouses
         nearby_warehouses = (
             Warehouse.objects.filter(
                 location__isnull=False,
+                is_active=True,
+                is_approved=True,
                 location__distance_lte=(user_location, Distance(km=radius)),
             )
             .annotate(distance=DistanceFunc("location", user_location))
-            .order_by("distance")[:10]  # Limit to top 10 nearest
+            .order_by("distance")
         )
 
-        # Format response with required fields
-        warehouses_data = [
-            {
-                "warehouse_id": warehouse.id,
-                "name": warehouse.name,
-                "address": warehouse.address,
-                "distance_in_km": f"{warehouse.distance.km:.2f}",
-            }
-            for warehouse in nearby_warehouses
-        ]
+        # Get total count of warehouses within radius
+        total_nearby = nearby_warehouses.count()
 
-        return Response({"warehouses": warehouses_data}, status=status.HTTP_200_OK)
+        # Get the single nearest warehouse
+        nearest_warehouse = nearby_warehouses.first()
+
+        # Prepare response
+        if nearest_warehouse:
+            response_data = {
+                "nearest_warehouse": {
+                    "id": nearest_warehouse.id,
+                    "name": nearest_warehouse.name,
+                    "address": nearest_warehouse.address,
+                    "distance_km": round(nearest_warehouse.distance.km, 2),
+                },
+                "total_nearby": total_nearby,
+            }
+        else:
+            response_data = {
+                "nearest_warehouse": None,
+                "total_nearby": 0,
+                "message": f"No warehouses found within {radius} km radius.",
+            }
+
+        # Cache the result for 5 minutes (300 seconds)
+        cache.set(cache_key, response_data, timeout=300)
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 # ===== Notification Views =====

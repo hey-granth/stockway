@@ -320,39 +320,45 @@ Browse products from warehouses with filters and search.
 
 ---
 
-### 9. Nearby Warehouses
+### 9. Nearby Warehouses (Optimized)
 **GET** `/api/shopkeepers/warehouses/nearby/`
 
-Get warehouses near a specified GPS location ordered by proximity.
+Get the nearest warehouse based on GPS location with optimized PostGIS spatial queries and Redis caching.
 
 **Query Parameters:**
 - `latitude` (required): User's GPS latitude coordinate (-90 to 90)
 - `longitude` (required): User's GPS longitude coordinate (-180 to 180)
-- `radius` (optional): Search radius in kilometers (default: 10, must be positive)
+- `radius` (optional): Search radius in kilometers (default: 10, range: 1-50)
 
 **Example:** `/api/shopkeepers/warehouses/nearby/?latitude=28.6139&longitude=77.2090&radius=15`
 
-**Response (200 OK):**
+**Response (200 OK - Warehouse Found):**
 ```json
 {
-  "warehouses": [
-    {
-      "warehouse_id": 1,
-      "name": "Main Warehouse",
-      "address": "123 Main St, City",
-      "distance_in_km": "2.50"
-    },
-    {
-      "warehouse_id": 3,
-      "name": "East Side Warehouse",
-      "address": "456 East Ave, City",
-      "distance_in_km": "7.80"
-    }
-  ]
+  "nearest_warehouse": {
+    "id": 1,
+    "name": "Main Warehouse",
+    "address": "123 Main St, City",
+    "distance_km": 2.5
+  },
+  "total_nearby": 3
 }
 ```
 
-**Note:** Returns maximum 10 nearest warehouses within the specified radius.
+**Response (200 OK - No Warehouse Found):**
+```json
+{
+  "nearest_warehouse": null,
+  "total_nearby": 0,
+  "message": "No warehouses found within 15 km radius."
+}
+```
+
+**Performance Features:**
+- Uses PostGIS spatial index for fast distance calculations
+- Returns only the single closest warehouse within radius
+- Query results cached in Redis for 5 minutes per (lat, lon, radius) combination
+- Only returns active and approved warehouses
 
 **Error Response (400 Bad Request - Missing Coordinates):**
 ```json
@@ -368,10 +374,24 @@ Get warehouses near a specified GPS location ordered by proximity.
 }
 ```
 
-**Error Response (400 Bad Request - Out of Range):**
+**Error Response (400 Bad Request - Invalid Latitude):**
 ```json
 {
   "error": "Invalid latitude. Latitude must be between -90 and 90 degrees."
+}
+```
+
+**Error Response (400 Bad Request - Invalid Longitude):**
+```json
+{
+  "error": "Invalid longitude. Longitude must be between -180 and 180 degrees."
+}
+```
+
+**Error Response (400 Bad Request - Invalid Radius):**
+```json
+{
+  "error": "Invalid radius. Radius must be between 1 and 50 kilometers."
 }
 ```
 
