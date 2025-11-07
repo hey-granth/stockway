@@ -4,34 +4,33 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0003_item_category_item_image_url_and_more'),
+        ("inventory", "0003_item_category_item_image_url_and_more"),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='item',
-            name='inventory_i_warehou_9fe840_idx',
+            model_name="item",
+            name="inventory_i_warehou_9fe840_idx",
         ),
         migrations.RemoveIndex(
-            model_name='item',
-            name='inventory_i_sku_3e99d5_idx',
+            model_name="item",
+            name="inventory_i_sku_3e99d5_idx",
         ),
         migrations.RemoveField(
-            model_name='item',
-            name='category',
+            model_name="item",
+            name="category",
         ),
         migrations.RemoveField(
-            model_name='item',
-            name='image_url',
+            model_name="item",
+            name="image_url",
         ),
         migrations.RemoveField(
-            model_name='item',
-            name='low_stock_threshold',
+            model_name="item",
+            name="low_stock_threshold",
         ),
         migrations.RemoveField(
-            model_name='item',
-            name='stock_quantity',
+            model_name="item",
+            name="stock_quantity",
         ),
     ]

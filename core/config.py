@@ -29,10 +29,17 @@ class Config:
     SUPABASE_DB_USER = os.getenv("SUPABASE_DB_USER")
     SUPABASE_DB_PASSWORD = os.getenv("SUPABASE_DB_PASSWORD")
 
+    # CORS settings
+    CORS_ALLOWED_ORIGINS = (
+        os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+        if os.getenv("CORS_ALLOWED_ORIGINS")
+        else []
+    )
+
     @classmethod
     def validate(cls):
         """Validate required configuration"""
-        required = ["SUPABASE_URL", "SUPABASE_KEY"]
+        required = ["SUPABASE_URL", "SUPABASE_KEY", "SUPABASE_JWT_SECRET"]
         missing = [key for key in required if not getattr(cls, key)]
         if missing:
             raise ValueError(f"Missing required configuration: {', '.join(missing)}")

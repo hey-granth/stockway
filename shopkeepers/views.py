@@ -411,7 +411,9 @@ class ShopkeeperNearbyWarehousesView(APIView):
             radius = float(request.query_params.get("radius", 10))
             if radius < 1 or radius > 50:
                 return Response(
-                    {"error": "Invalid radius. Radius must be between 1 and 50 kilometers."},
+                    {
+                        "error": "Invalid radius. Radius must be between 1 and 50 kilometers."
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         except (ValueError, TypeError):

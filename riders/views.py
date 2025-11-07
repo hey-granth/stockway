@@ -2,11 +2,13 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Prefetch
+from django.db import transaction
 from .models import RiderProfile
 from .serializers import RiderProfileSerializer
 from core.permissions import IsRider
-from orders.models import Order
-from orders.serializers import OrderSerializer
+from orders.models import Order, OrderItem
+from orders.serializers import OrderSerializer, OrderStatusUpdateSerializer
 from delivery.models import Delivery
 
 
@@ -51,43 +53,78 @@ class RiderProfileView(APIView):
 
 class RiderOrderListView(generics.ListAPIView):
     """
-    API view for riders to list their assigned orders.
+    GET /api/rider/orders/
+    List all orders assigned to the authenticated rider
     """
 
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, IsRider]
 
     def get_queryset(self):
-        return Order.objects.filter(delivery__rider=self.request.user)
+        # Get orders assigned to this rider through delivery
+        return (
+            Order.objects.filter(delivery__rider=self.request.user)
+            .select_related("shopkeeper", "warehouse", "delivery", "delivery__rider")
+            .prefetch_related(
+                Prefetch(
+                    "order_items", queryset=OrderItem.objects.select_related("item")
+                )
+            )
+            .order_by("-created_at")
+        )
 
 
-class RiderOrderDeliverView(APIView):
+class RiderOrderUpdateView(APIView):
     """
-    API view for riders to mark an order as delivered.
+    PATCH /api/rider/orders/<int:pk>/
+    Update order status (in_transit → delivered) for assigned orders
     """
 
     permission_classes = [IsAuthenticated, IsRider]
 
-    def post(self, request, order_id):
+    def patch(self, request, pk):
         try:
-            order = Order.objects.get(id=order_id, delivery__rider=request.user)
+            # Get order assigned to this rider
+            order = Order.objects.select_related(
+                "delivery", "delivery__rider", "shopkeeper", "warehouse"
+            ).get(id=pk, delivery__rider=request.user)
         except Order.DoesNotExist:
             return Response(
-                {"error": "Order not found."},
+                {"error": "Order not found or not assigned to you"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if order.status != "in_transit":
-            return Response(
-                {"error": "Order cannot be delivered."},
-                status=status.HTTP_400_BAD_REQUEST,
+        # Validate status update
+        serializer = OrderStatusUpdateSerializer(
+            data=request.data, context={"order": order}
+        )
+
+        if serializer.is_valid():
+            new_status = serializer.validated_data["status"]
+
+            with transaction.atomic():
+                # Update order status
+                order.status = new_status
+                order.save(update_fields=["status", "updated_at"])
+
+                # Update delivery status
+                order.delivery.status = new_status
+                order.delivery.save(update_fields=["status", "updated_at"])
+
+            # Fetch updated order with full details
+            order = (
+                Order.objects.select_related(
+                    "shopkeeper", "warehouse", "delivery", "delivery__rider"
+                )
+                .prefetch_related(
+                    Prefetch(
+                        "order_items", queryset=OrderItem.objects.select_related("item")
+                    )
+                )
+                .get(id=order.id)
             )
 
-        order.status = "delivered"
-        order.save()
+            response_serializer = OrderSerializer(order)
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
 
-        delivery = Delivery.objects.get(order=order)
-        delivery.status = "delivered"
-        delivery.save()
-
-        return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
