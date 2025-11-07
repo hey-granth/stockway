@@ -1,53 +1,45 @@
 """
-Rate limiting and throttling for API endpoints
+Custom throttling classes for API rate limiting
 """
-
-from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
-
-
-class AuthThrottle(AnonRateThrottle):
-    """
-    Throttle for authentication endpoints (login, signup, OTP)
-    """
-
-    rate = "10/hour"  # 10 requests per hour per IP
-
-
-class OTPThrottle(AnonRateThrottle):
-    """
-    Strict throttle for OTP generation endpoints
-    """
-
-    rate = "5/hour"  # 5 OTP requests per hour per IP
-
-
-class GeoQueryThrottle(UserRateThrottle):
-    """
-    Throttle for geo query endpoints (nearby warehouses, rider search)
-    """
-
-    rate = "60/minute"  # 60 requests per minute per user
-
-
-class OrderCreationThrottle(UserRateThrottle):
-    """
-    Throttle for order creation
-    """
-
-    rate = "20/hour"  # 20 orders per hour per user
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 
 class StandardUserThrottle(UserRateThrottle):
     """
     Standard throttle for authenticated users
+    Rate configured in settings: 1000/day
     """
-
-    rate = "1000/day"  # 1000 requests per day per user
+    rate = '1000/day'
 
 
 class StandardAnonThrottle(AnonRateThrottle):
     """
     Standard throttle for anonymous users
+    Rate configured in settings: 100/day
     """
+    rate = '100/day'
 
-    rate = "100/day"  # 100 requests per day per IP
+
+class LocationUpdateThrottle(UserRateThrottle):
+    """
+    Throttle for rider location updates to prevent spam
+    Rate: 60 requests per minute (1 per second)
+    """
+    rate = '60/min'
+
+
+class OrderCreationThrottle(UserRateThrottle):
+    """
+    Throttle for order creation to prevent abuse
+    Rate: 30 requests per minute
+    """
+    rate = '30/min'
+
+
+class AuthenticationThrottle(UserRateThrottle):
+    """
+    Throttle for authentication endpoints
+    Rate: 10 requests per minute
+    """
+    rate = '10/min'
+

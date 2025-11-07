@@ -1,7 +1,7 @@
 # riders/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Rider
+from .models import Rider, RiderNotification
 from warehouses.models import Warehouse
 
 User = get_user_model()
@@ -192,3 +192,89 @@ class RiderListSerializer(serializers.ModelSerializer):
             delivery__rider=obj.user,
             status__in=["assigned", "in_transit"],
         ).count()
+
+
+class RiderEarningsSerializer(serializers.Serializer):
+    """Serializer for rider earnings summary"""
+    total_earnings = serializers.DecimalField(max_digits=10, decimal_places=2)
+    completed_orders_count = serializers.IntegerField()
+    total_distance_km = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class RiderHistorySerializer(serializers.Serializer):
+    """Serializer for rider delivery history"""
+    order_id = serializers.IntegerField()
+    warehouse_name = serializers.CharField()
+    warehouse_id = serializers.IntegerField()
+    distance_km = serializers.DecimalField(max_digits=10, decimal_places=2)
+    payout_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    delivery_date = serializers.DateTimeField()
+    status = serializers.CharField()
+
+
+class RiderPerformanceSerializer(serializers.Serializer):
+    """Serializer for rider performance metrics"""
+    average_delivery_time_minutes = serializers.FloatField(allow_null=True)
+    success_rate = serializers.FloatField()
+    total_deliveries = serializers.IntegerField()
+    successful_deliveries = serializers.IntegerField()
+    distance_per_order = serializers.FloatField()
+    total_distance_km = serializers.FloatField()
+    monthly_aggregates = serializers.ListField(required=False)
+
+
+class RiderNotificationSerializer(serializers.ModelSerializer):
+    """Serializer for rider notifications"""
+
+    class Meta:
+        model = RiderNotification
+        fields = [
+            'id',
+            'notification_type',
+            'title',
+            'message',
+            'is_read',
+            'metadata',
+            'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class RiderAvailabilitySerializer(serializers.Serializer):
+    """Serializer for updating rider availability"""
+    availability = serializers.ChoiceField(choices=['available', 'off-duty'])
+
+
+class ActiveRiderSerializer(serializers.Serializer):
+    """Serializer for active riders with live location"""
+    rider_id = serializers.IntegerField()
+    name = serializers.CharField()
+    email = serializers.CharField()
+    latitude = serializers.FloatField()
+    longitude = serializers.FloatField()
+    last_update = serializers.DateTimeField()
+    status = serializers.CharField()
+
+
+class WarehouseRiderMetricsSerializer(serializers.Serializer):
+    """Serializer for warehouse-level rider metrics"""
+    rider_id = serializers.IntegerField()
+    rider_name = serializers.CharField()
+    rider_email = serializers.CharField()
+    total_earnings = serializers.DecimalField(max_digits=10, decimal_places=2)
+    completed_orders = serializers.IntegerField()
+    total_distance_km = serializers.DecimalField(max_digits=10, decimal_places=2)
+    success_rate = serializers.FloatField()
+    average_delivery_time_minutes = serializers.FloatField(allow_null=True)
+    status = serializers.CharField()
+    availability = serializers.CharField()
+
+
+class RiderManagementSerializer(serializers.Serializer):
+    """Serializer for admin rider management actions"""
+    action = serializers.ChoiceField(choices=['suspend', 'reactivate', 'reassign'])
+    rider_id = serializers.IntegerField()
+    reason = serializers.CharField(required=False, allow_blank=True)
+    new_warehouse_id = serializers.IntegerField(required=False)
+
+
