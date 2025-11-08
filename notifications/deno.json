@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.unstable", "esnext"],
+    "strict": true,
+    "allowJs": true,
+    "checkJs": false,
+    "types": ["./deno.d.ts"]
+  },
+  "imports": {
+    "supabase": "https://esm.sh/@supabase/supabase-js@2.39.0"
+  }
+}
+

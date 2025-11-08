@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "warehouses",
     "riders",
     "shopkeepers",
+    "notifications",  # Notification system
 ]
 
 MIDDLEWARE = [
@@ -258,6 +259,42 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
     "x-correlation-id",
 ]
+
+# ===========================
+# CELERY CONFIGURATION
+# ===========================
+
+# Celery broker (RabbitMQ)
+CELERY_BROKER_URL = "amqp://guest:guest@localhost:5672//"
+
+# Celery result backend (Redis)
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+
+# Celery task settings
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes
+
+# Celery queue routing
+CELERY_TASK_ROUTES = {
+    "notifications.send_notification": {"queue": "notifications"},
+    "notifications.cleanup_old_notifications": {"queue": "notifications"},
+}
+
+# Celery beat schedule for periodic tasks
+CELERY_BEAT_SCHEDULE = {
+    "cleanup-old-notifications": {
+        "task": "notifications.cleanup_old_notifications",
+        "schedule": 86400.0,  # Daily (24 hours in seconds)
+    },
+}
+
+# Optional: Supabase Edge Function URL for push/SMS delivery
+SUPABASE_EDGE_FUNCTION_URL = Config.SUPABASE_EDGE_FUNCTION_URL if hasattr(Config, "SUPABASE_EDGE_FUNCTION_URL") else None
 
 # ===========================
 # LOGGING CONFIGURATION

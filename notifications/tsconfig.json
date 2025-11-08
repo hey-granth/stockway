@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["./deno.d.ts"],
+    "typeRoots": ["./"]
+  },
+  "include": [
+    "supabase_edge_function.ts",
+    "deno.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
+
