@@ -1,84 +1,120 @@
 from django.contrib import admin
-from .models import Payment
+from .models import Payment, Payout
 
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     """
-    Admin interface for Payment model with comprehensive filtering and display options.
+    Admin interface for Payment model.
     """
-
     list_display = [
         "id",
-        "transaction_id",
-        "payment_type",
-        "status",
-        "amount",
+        "order",
         "payer",
         "payee",
-        "rider",
-        "warehouse",
-        "order",
+        "amount",
+        "mode",
+        "status",
         "created_at",
-        "completed_at",
     ]
 
     list_filter = [
         "status",
-        "payment_type",
-        "payment_method",
+        "mode",
         "created_at",
-        "completed_at",
-        "warehouse",
     ]
 
     search_fields = [
-        "transaction_id",
+        "payer__email",
         "payer__phone_number",
+        "payee__email",
         "payee__phone_number",
-        "rider__phone_number",
-        "notes",
+        "order__id",
     ]
 
-    readonly_fields = ["transaction_id", "created_at", "updated_at", "completed_at"]
+    readonly_fields = ["created_at", "updated_at"]
 
     fieldsets = (
         (
             "Transaction Information",
             {
                 "fields": (
-                    "transaction_id",
-                    "payment_type",
-                    "status",
+                    "order",
+                    "payer",
+                    "payee",
                     "amount",
-                    "payment_method",
+                    "mode",
+                    "status",
                 )
             },
         ),
         (
-            "Related Entities",
-            {"fields": ("order", "warehouse", "payer", "payee", "rider")},
-        ),
-        ("Additional Details", {"fields": ("distance_km", "notes")}),
-        (
             "Timestamps",
             {
-                "fields": ("created_at", "updated_at", "completed_at"),
+                "fields": ("created_at", "updated_at"),
                 "classes": ("collapse",),
             },
         ),
     )
 
-    list_per_page = 50
-    date_hierarchy = "created_at"
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related("order", "payer", "payee")
+
+
+@admin.register(Payout)
+class PayoutAdmin(admin.ModelAdmin):
+    """
+    Admin interface for Payout model.
+    """
+    list_display = [
+        "id",
+        "rider",
+        "warehouse",
+        "total_distance",
+        "rate_per_km",
+        "computed_amount",
+        "status",
+        "created_at",
+    ]
+
+    list_filter = [
+        "status",
+        "created_at",
+        "warehouse",
+    ]
+
+    search_fields = [
+        "rider__user__email",
+        "rider__user__phone_number",
+        "warehouse__name",
+    ]
+
+    readonly_fields = ["created_at", "updated_at"]
+
+    fieldsets = (
+        (
+            "Payout Information",
+            {
+                "fields": (
+                    "rider",
+                    "warehouse",
+                    "total_distance",
+                    "rate_per_km",
+                    "computed_amount",
+                    "status",
+                )
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
 
     def get_queryset(self, request):
-        """Optimize queryset with select_related."""
         qs = super().get_queryset(request)
-        return qs.select_related("order", "warehouse", "payer", "payee", "rider")
-
-    def has_delete_permission(self, request, obj=None):
-        """Prevent deletion of completed payments."""
-        if obj and obj.status == "completed":
-            return False
-        return super().has_delete_permission(request, obj)
+        return qs.select_related("rider", "warehouse")

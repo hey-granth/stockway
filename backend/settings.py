@@ -283,6 +283,11 @@ CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes
 CELERY_TASK_ROUTES = {
     "notifications.send_notification": {"queue": "notifications"},
     "notifications.cleanup_old_notifications": {"queue": "notifications"},
+    "payouts.compute_for_order": {"queue": "payments"},
+    "payouts.nightly_rollup": {"queue": "payments"},
+    "payouts.notify_completion": {"queue": "notifications"},
+    "payouts.notify_creation": {"queue": "notifications"},
+    "payouts.notify_settlement": {"queue": "notifications"},
 }
 
 # Celery beat schedule for periodic tasks
@@ -290,6 +295,12 @@ CELERY_BEAT_SCHEDULE = {
     "cleanup-old-notifications": {
         "task": "notifications.cleanup_old_notifications",
         "schedule": 86400.0,  # Daily (24 hours in seconds)
+    },
+    "nightly-payout-rollup": {
+        "task": "payouts.nightly_rollup",
+        "schedule": 86400.0,  # Daily at midnight (you can use crontab for specific time)
+        # To run at specific time: from celery.schedules import crontab
+        # "schedule": crontab(hour=0, minute=0),  # Run at midnight
     },
 }
 
