@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "riders",
     "shopkeepers",
     "notifications",  # Notification system
+    "analytics",  # Analytics and reporting
 ]
 
 MIDDLEWARE = [
