@@ -5,68 +5,97 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('riders', '0001_initial'),
-        ('warehouses', '0001_initial'),
+        ("riders", "0001_initial"),
+        ("warehouses", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='rider',
-            name='warehouse',
-            field=models.ForeignKey(help_text='Warehouse where rider is assigned', on_delete=django.db.models.deletion.CASCADE, related_name='riders', to='warehouses.warehouse'),
+            model_name="rider",
+            name="warehouse",
+            field=models.ForeignKey(
+                help_text="Warehouse where rider is assigned",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="riders",
+                to="warehouses.warehouse",
+            ),
         ),
         migrations.AddField(
-            model_name='riderlocationhistory',
-            name='rider',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='location_history', to='riders.rider'),
+            model_name="riderlocationhistory",
+            name="rider",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="location_history",
+                to="riders.rider",
+            ),
         ),
         migrations.AddField(
-            model_name='ridernotification',
-            name='rider',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='riders.rider'),
+            model_name="ridernotification",
+            name="rider",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="notifications",
+                to="riders.rider",
+            ),
         ),
         migrations.AddIndex(
-            model_name='rider',
-            index=models.Index(fields=['warehouse', 'status'], name='riders_warehou_b8597d_idx'),
+            model_name="rider",
+            index=models.Index(
+                fields=["warehouse", "status"], name="riders_warehou_b8597d_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='rider',
-            index=models.Index(fields=['status'], name='riders_status_441554_idx'),
+            model_name="rider",
+            index=models.Index(fields=["status"], name="riders_status_441554_idx"),
         ),
         migrations.AddIndex(
-            model_name='rider',
-            index=models.Index(fields=['user'], name='riders_user_id_17cd1f_idx'),
+            model_name="rider",
+            index=models.Index(fields=["user"], name="riders_user_id_17cd1f_idx"),
         ),
         migrations.AddIndex(
-            model_name='rider',
-            index=models.Index(fields=['availability'], name='riders_availab_e67718_idx'),
+            model_name="rider",
+            index=models.Index(
+                fields=["availability"], name="riders_availab_e67718_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='rider',
-            index=models.Index(fields=['is_suspended'], name='riders_is_susp_840c63_idx'),
+            model_name="rider",
+            index=models.Index(
+                fields=["is_suspended"], name="riders_is_susp_840c63_idx"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='rider',
-            constraint=models.CheckConstraint(condition=models.Q(('total_earnings__gte', 0)), name='rider_total_earnings_non_negative'),
+            model_name="rider",
+            constraint=models.CheckConstraint(
+                condition=models.Q(("total_earnings__gte", 0)),
+                name="rider_total_earnings_non_negative",
+            ),
         ),
         migrations.AddIndex(
-            model_name='riderlocationhistory',
-            index=models.Index(fields=['rider', 'timestamp'], name='rider_locat_rider_i_92b1d6_idx'),
+            model_name="riderlocationhistory",
+            index=models.Index(
+                fields=["rider", "timestamp"], name="rider_locat_rider_i_92b1d6_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='riderlocationhistory',
-            index=models.Index(fields=['is_suspicious'], name='rider_locat_is_susp_239b1a_idx'),
+            model_name="riderlocationhistory",
+            index=models.Index(
+                fields=["is_suspicious"], name="rider_locat_is_susp_239b1a_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='ridernotification',
-            index=models.Index(fields=['rider', 'is_read'], name='rider_notif_rider_i_2c44d4_idx'),
+            model_name="ridernotification",
+            index=models.Index(
+                fields=["rider", "is_read"], name="rider_notif_rider_i_2c44d4_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='ridernotification',
-            index=models.Index(fields=['notification_type'], name='rider_notif_notific_39cc0d_idx'),
+            model_name="ridernotification",
+            index=models.Index(
+                fields=["notification_type"], name="rider_notif_notific_39cc0d_idx"
+            ),
         ),
     ]

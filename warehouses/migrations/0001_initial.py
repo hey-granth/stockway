@@ -9,95 +9,225 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('orders', '0001_initial'),
-        ('riders', '0001_initial'),
+        ("orders", "0001_initial"),
+        ("riders", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Warehouse',
+            name="Warehouse",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('address', models.TextField()),
-                ('contact_number', models.CharField(max_length=20)),
-                ('location', django.contrib.gis.db.models.fields.PointField(blank=True, geography=True, null=True, srid=4326)),
-                ('is_active', models.BooleanField(default=True)),
-                ('is_approved', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('admin', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='warehouses', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("address", models.TextField()),
+                ("contact_number", models.CharField(max_length=20)),
+                (
+                    "location",
+                    django.contrib.gis.db.models.fields.PointField(
+                        blank=True, geography=True, null=True, srid=4326
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("is_approved", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "admin",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="warehouses",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'warehouses',
-                'ordering': ['-created_at'],
+                "db_table": "warehouses",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='RiderPayout',
+            name="RiderPayout",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('base_rate', models.DecimalField(decimal_places=2, max_digits=10, validators=[django.core.validators.MinValueValidator(Decimal('0.01'))])),
-                ('distance_km', models.DecimalField(decimal_places=2, max_digits=10, validators=[django.core.validators.MinValueValidator(Decimal('0.00'))])),
-                ('distance_rate', models.DecimalField(decimal_places=2, max_digits=10, validators=[django.core.validators.MinValueValidator(Decimal('0.00'))])),
-                ('total_amount', models.DecimalField(decimal_places=2, editable=False, max_digits=10)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('processing', 'Processing'), ('completed', 'Completed'), ('failed', 'Failed')], default='pending', max_length=20)),
-                ('payment_reference', models.CharField(blank=True, max_length=255)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('paid_at', models.DateTimeField(blank=True, null=True)),
-                ('order', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='rider_payouts', to='orders.order')),
-                ('rider', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='payouts', to='riders.rider')),
-                ('warehouse', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='rider_payouts', to='warehouses.warehouse')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "base_rate",
+                    models.DecimalField(
+                        decimal_places=2,
+                        max_digits=10,
+                        validators=[
+                            django.core.validators.MinValueValidator(Decimal("0.01"))
+                        ],
+                    ),
+                ),
+                (
+                    "distance_km",
+                    models.DecimalField(
+                        decimal_places=2,
+                        max_digits=10,
+                        validators=[
+                            django.core.validators.MinValueValidator(Decimal("0.00"))
+                        ],
+                    ),
+                ),
+                (
+                    "distance_rate",
+                    models.DecimalField(
+                        decimal_places=2,
+                        max_digits=10,
+                        validators=[
+                            django.core.validators.MinValueValidator(Decimal("0.00"))
+                        ],
+                    ),
+                ),
+                (
+                    "total_amount",
+                    models.DecimalField(
+                        decimal_places=2, editable=False, max_digits=10
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("processing", "Processing"),
+                            ("completed", "Completed"),
+                            ("failed", "Failed"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("payment_reference", models.CharField(blank=True, max_length=255)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("paid_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "order",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="rider_payouts",
+                        to="orders.order",
+                    ),
+                ),
+                (
+                    "rider",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="payouts",
+                        to="riders.rider",
+                    ),
+                ),
+                (
+                    "warehouse",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="rider_payouts",
+                        to="warehouses.warehouse",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'rider_payouts',
-                'ordering': ['-created_at'],
+                "db_table": "rider_payouts",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='WarehouseNotification',
+            name="WarehouseNotification",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('notification_type', models.CharField(choices=[('order', 'Order'), ('stock', 'Stock'), ('general', 'General'), ('payment', 'Payment'), ('rider', 'Rider')], max_length=20)),
-                ('title', models.CharField(max_length=255)),
-                ('message', models.TextField()),
-                ('is_read', models.BooleanField(default=False)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('warehouse', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='warehouses.warehouse')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "notification_type",
+                    models.CharField(
+                        choices=[
+                            ("order", "Order"),
+                            ("stock", "Stock"),
+                            ("general", "General"),
+                            ("payment", "Payment"),
+                            ("rider", "Rider"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("title", models.CharField(max_length=255)),
+                ("message", models.TextField()),
+                ("is_read", models.BooleanField(default=False)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "warehouse",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="notifications",
+                        to="warehouses.warehouse",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'warehouse_notifications',
-                'ordering': ['-created_at'],
+                "db_table": "warehouse_notifications",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.AddIndex(
-            model_name='warehouse',
-            index=models.Index(fields=['is_active', 'is_approved'], name='warehouses_is_acti_3de84b_idx'),
+            model_name="warehouse",
+            index=models.Index(
+                fields=["is_active", "is_approved"],
+                name="warehouses_is_acti_3de84b_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='warehouse',
-            index=models.Index(fields=['admin'], name='warehouses_admin_i_f8d420_idx'),
+            model_name="warehouse",
+            index=models.Index(fields=["admin"], name="warehouses_admin_i_f8d420_idx"),
         ),
         migrations.AddIndex(
-            model_name='riderpayout',
-            index=models.Index(fields=['warehouse', 'status'], name='rider_payou_warehou_49c868_idx'),
+            model_name="riderpayout",
+            index=models.Index(
+                fields=["warehouse", "status"], name="rider_payou_warehou_49c868_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='riderpayout',
-            index=models.Index(fields=['rider', 'status'], name='rider_payou_rider_i_04327c_idx'),
+            model_name="riderpayout",
+            index=models.Index(
+                fields=["rider", "status"], name="rider_payou_rider_i_04327c_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='warehousenotification',
-            index=models.Index(fields=['warehouse', 'is_read'], name='warehouse_n_warehou_77bf43_idx'),
+            model_name="warehousenotification",
+            index=models.Index(
+                fields=["warehouse", "is_read"], name="warehouse_n_warehou_77bf43_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='warehousenotification',
-            index=models.Index(fields=['notification_type'], name='warehouse_n_notific_4e9a30_idx'),
+            model_name="warehousenotification",
+            index=models.Index(
+                fields=["notification_type"], name="warehouse_n_notific_4e9a30_idx"
+            ),
         ),
     ]

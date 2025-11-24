@@ -4,31 +4,77 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='AnalyticsSummary',
+            name="AnalyticsSummary",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('ref_type', models.CharField(choices=[('system', 'System'), ('warehouse', 'Warehouse'), ('rider', 'Rider'), ('shopkeeper', 'Shopkeeper')], db_index=True, max_length=20)),
-                ('ref_id', models.IntegerField(blank=True, db_index=True, help_text='ID of the referenced entity (null for system-wide)', null=True)),
-                ('date', models.DateField(db_index=True, help_text='Date for which metrics are computed')),
-                ('metrics', models.JSONField(default=dict, help_text='JSON object containing computed metrics')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "ref_type",
+                    models.CharField(
+                        choices=[
+                            ("system", "System"),
+                            ("warehouse", "Warehouse"),
+                            ("rider", "Rider"),
+                            ("shopkeeper", "Shopkeeper"),
+                        ],
+                        db_index=True,
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "ref_id",
+                    models.IntegerField(
+                        blank=True,
+                        db_index=True,
+                        help_text="ID of the referenced entity (null for system-wide)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "date",
+                    models.DateField(
+                        db_index=True, help_text="Date for which metrics are computed"
+                    ),
+                ),
+                (
+                    "metrics",
+                    models.JSONField(
+                        default=dict,
+                        help_text="JSON object containing computed metrics",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Analytics Summary',
-                'verbose_name_plural': 'Analytics Summaries',
-                'db_table': 'analytics_summary',
-                'ordering': ['-date', 'ref_type'],
-                'indexes': [models.Index(fields=['ref_type', 'date'], name='analytics_s_ref_typ_0ddfdd_idx'), models.Index(fields=['ref_type', 'ref_id', 'date'], name='analytics_s_ref_typ_ac7a78_idx')],
-                'unique_together': {('ref_type', 'ref_id', 'date')},
+                "verbose_name": "Analytics Summary",
+                "verbose_name_plural": "Analytics Summaries",
+                "db_table": "analytics_summary",
+                "ordering": ["-date", "ref_type"],
+                "indexes": [
+                    models.Index(
+                        fields=["ref_type", "date"],
+                        name="analytics_s_ref_typ_0ddfdd_idx",
+                    ),
+                    models.Index(
+                        fields=["ref_type", "ref_id", "date"],
+                        name="analytics_s_ref_typ_ac7a78_idx",
+                    ),
+                ],
+                "unique_together": {("ref_type", "ref_id", "date")},
             },
         ),
     ]

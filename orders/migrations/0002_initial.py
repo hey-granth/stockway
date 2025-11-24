@@ -5,65 +5,91 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('inventory', '0002_initial'),
-        ('orders', '0001_initial'),
-        ('warehouses', '0001_initial'),
+        ("inventory", "0002_initial"),
+        ("orders", "0001_initial"),
+        ("warehouses", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='order',
-            name='warehouse',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='orders', to='warehouses.warehouse'),
+            model_name="order",
+            name="warehouse",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="orders",
+                to="warehouses.warehouse",
+            ),
         ),
         migrations.AddField(
-            model_name='orderitem',
-            name='item',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='inventory.item'),
+            model_name="orderitem",
+            name="item",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="inventory.item"
+            ),
         ),
         migrations.AddField(
-            model_name='orderitem',
-            name='order',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='order_items', to='orders.order'),
+            model_name="orderitem",
+            name="order",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="order_items",
+                to="orders.order",
+            ),
         ),
         migrations.AddIndex(
-            model_name='order',
-            index=models.Index(fields=['shopkeeper', 'status'], name='orders_shopkee_361324_idx'),
+            model_name="order",
+            index=models.Index(
+                fields=["shopkeeper", "status"], name="orders_shopkee_361324_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='order',
-            index=models.Index(fields=['warehouse', 'status'], name='orders_warehou_2e03b2_idx'),
+            model_name="order",
+            index=models.Index(
+                fields=["warehouse", "status"], name="orders_warehou_2e03b2_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='order',
-            index=models.Index(fields=['status', 'created_at'], name='orders_status_11db6c_idx'),
+            model_name="order",
+            index=models.Index(
+                fields=["status", "created_at"], name="orders_status_11db6c_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='order',
-            index=models.Index(fields=['warehouse', 'created_at'], name='orders_warehou_56ac91_idx'),
+            model_name="order",
+            index=models.Index(
+                fields=["warehouse", "created_at"], name="orders_warehou_56ac91_idx"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='order',
-            constraint=models.CheckConstraint(condition=models.Q(('total_amount__gte', 0)), name='order_total_amount_non_negative'),
+            model_name="order",
+            constraint=models.CheckConstraint(
+                condition=models.Q(("total_amount__gte", 0)),
+                name="order_total_amount_non_negative",
+            ),
         ),
         migrations.AddIndex(
-            model_name='orderitem',
-            index=models.Index(fields=['order'], name='order_items_order_i_26ad88_idx'),
+            model_name="orderitem",
+            index=models.Index(fields=["order"], name="order_items_order_i_26ad88_idx"),
         ),
         migrations.AddIndex(
-            model_name='orderitem',
-            index=models.Index(fields=['item'], name='order_items_item_id_d2f8f9_idx'),
+            model_name="orderitem",
+            index=models.Index(fields=["item"], name="order_items_item_id_d2f8f9_idx"),
         ),
         migrations.AddConstraint(
-            model_name='orderitem',
-            constraint=models.CheckConstraint(condition=models.Q(('quantity__gte', 1)), name='order_item_quantity_positive'),
+            model_name="orderitem",
+            constraint=models.CheckConstraint(
+                condition=models.Q(("quantity__gte", 1)),
+                name="order_item_quantity_positive",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='orderitem',
-            constraint=models.CheckConstraint(condition=models.Q(('price__gte', 0)), name='order_item_price_non_negative'),
+            model_name="orderitem",
+            constraint=models.CheckConstraint(
+                condition=models.Q(("price__gte", 0)),
+                name="order_item_price_non_negative",
+            ),
         ),
     ]

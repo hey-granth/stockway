@@ -99,6 +99,9 @@ DATABASES = {
         "PASSWORD": Config.DB_PASSWORD,
         "HOST": Config.DB_HOST,
         "PORT": Config.DB_PORT,
+        "TEST": {
+            "NAME": "test_backend_db",  # Local test database
+        },
     }
 }
 AUTH_PASSWORD_VALIDATORS = [
@@ -208,6 +211,35 @@ if USE_SUPABASE_DB:
             "PORT": Config.SUPABASE_DB_PORT,
         }
     }
+
+# ===========================
+# TEST DATABASE OVERRIDE
+# ===========================
+# When running tests, override database to use local PostgreSQL instead of Supabase
+import sys
+
+TESTING = "test" in sys.argv
+
+if TESTING and Config.TEST_DATABASE_URL:
+    # Parse the TEST_DATABASE_URL to extract connection details
+    # Format: postgresql://user:password@host:port/dbname
+    import re
+
+    url_pattern = r"postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)"
+    match = re.match(url_pattern, Config.TEST_DATABASE_URL)
+
+    if match:
+        test_user, test_password, test_host, test_port, test_name = match.groups()
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.contrib.gis.db.backends.postgis",
+                "NAME": test_name,
+                "USER": test_user,
+                "PASSWORD": test_password,
+                "HOST": test_host,
+                "PORT": test_port,
+            }
+        }
 
 # ===========================
 # SECURITY SETTINGS

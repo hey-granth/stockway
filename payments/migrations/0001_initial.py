@@ -6,45 +6,129 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('orders', '0001_initial'),
+        ("orders", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Payout',
+            name="Payout",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('total_distance', models.FloatField(help_text='Total distance in kilometers')),
-                ('rate_per_km', models.DecimalField(decimal_places=2, help_text='Rate per kilometer', max_digits=6)),
-                ('computed_amount', models.DecimalField(decimal_places=2, help_text='Computed payout amount', max_digits=10)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('settled', 'Settled')], default='pending', max_length=20)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "total_distance",
+                    models.FloatField(help_text="Total distance in kilometers"),
+                ),
+                (
+                    "rate_per_km",
+                    models.DecimalField(
+                        decimal_places=2, help_text="Rate per kilometer", max_digits=6
+                    ),
+                ),
+                (
+                    "computed_amount",
+                    models.DecimalField(
+                        decimal_places=2,
+                        help_text="Computed payout amount",
+                        max_digits=10,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[("pending", "Pending"), ("settled", "Settled")],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='Payment',
+            name="Payment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('mode', models.CharField(choices=[('upi', 'UPI'), ('cash', 'Cash'), ('credit', 'Credit')], default='cash', max_length=20)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('completed', 'Completed'), ('failed', 'Failed')], default='pending', max_length=20)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('order', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='payments', to='orders.order')),
-                ('payee', models.ForeignKey(blank=True, help_text='Warehouse receiving the payment', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='payments_received', to=settings.AUTH_USER_MODEL)),
-                ('payer', models.ForeignKey(help_text='Shopkeeper making the payment', on_delete=django.db.models.deletion.CASCADE, related_name='payments_made', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("amount", models.DecimalField(decimal_places=2, max_digits=10)),
+                (
+                    "mode",
+                    models.CharField(
+                        choices=[
+                            ("upi", "UPI"),
+                            ("cash", "Cash"),
+                            ("credit", "Credit"),
+                        ],
+                        default="cash",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("completed", "Completed"),
+                            ("failed", "Failed"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "order",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="payments",
+                        to="orders.order",
+                    ),
+                ),
+                (
+                    "payee",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Warehouse receiving the payment",
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="payments_received",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "payer",
+                    models.ForeignKey(
+                        help_text="Shopkeeper making the payment",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="payments_made",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
     ]

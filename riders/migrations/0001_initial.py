@@ -9,7 +9,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -18,54 +17,190 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='RiderLocationHistory',
+            name="RiderLocationHistory",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('location', django.contrib.gis.db.models.fields.PointField(geography=True, srid=4326)),
-                ('speed_kmh', models.DecimalField(blank=True, decimal_places=2, help_text='Calculated speed in km/h', max_digits=6, null=True)),
-                ('is_suspicious', models.BooleanField(db_index=True, default=False, help_text='Flagged for abnormal movement')),
-                ('distance_from_previous_km', models.DecimalField(blank=True, decimal_places=2, help_text='Distance from previous location in km', max_digits=10, null=True)),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "location",
+                    django.contrib.gis.db.models.fields.PointField(
+                        geography=True, srid=4326
+                    ),
+                ),
+                (
+                    "speed_kmh",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        help_text="Calculated speed in km/h",
+                        max_digits=6,
+                        null=True,
+                    ),
+                ),
+                (
+                    "is_suspicious",
+                    models.BooleanField(
+                        db_index=True,
+                        default=False,
+                        help_text="Flagged for abnormal movement",
+                    ),
+                ),
+                (
+                    "distance_from_previous_km",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        help_text="Distance from previous location in km",
+                        max_digits=10,
+                        null=True,
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'db_table': 'rider_location_history',
-                'ordering': ['-timestamp'],
+                "db_table": "rider_location_history",
+                "ordering": ["-timestamp"],
             },
         ),
         migrations.CreateModel(
-            name='RiderNotification',
+            name="RiderNotification",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('notification_type', models.CharField(choices=[('order_assigned', 'Order Assigned'), ('order_update', 'Order Update'), ('payment', 'Payment'), ('general', 'General'), ('suspension', 'Suspension')], max_length=20)),
-                ('title', models.CharField(max_length=255)),
-                ('message', models.TextField()),
-                ('is_read', models.BooleanField(default=False)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "notification_type",
+                    models.CharField(
+                        choices=[
+                            ("order_assigned", "Order Assigned"),
+                            ("order_update", "Order Update"),
+                            ("payment", "Payment"),
+                            ("general", "General"),
+                            ("suspension", "Suspension"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("title", models.CharField(max_length=255)),
+                ("message", models.TextField()),
+                ("is_read", models.BooleanField(default=False)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'db_table': 'rider_notifications',
-                'ordering': ['-created_at'],
+                "db_table": "rider_notifications",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='Rider',
+            name="Rider",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('status', models.CharField(choices=[('available', 'Available'), ('busy', 'Busy'), ('inactive', 'Inactive')], db_index=True, default='available', help_text='Current availability status of the rider', max_length=20)),
-                ('availability', models.CharField(choices=[('available', 'Available'), ('off-duty', 'Off Duty')], db_index=True, default='available', help_text='Rider availability for accepting orders', max_length=20)),
-                ('current_location', django.contrib.gis.db.models.fields.PointField(blank=True, geography=True, help_text='Current GPS location of the rider', null=True, srid=4326)),
-                ('total_earnings', models.DecimalField(decimal_places=2, default=Decimal('0.00'), help_text='Total earnings accumulated by the rider', max_digits=10, validators=[django.core.validators.MinValueValidator(Decimal('0.00'))])),
-                ('device_identifier', models.CharField(blank=True, help_text='Unique device identifier for security', max_length=255, null=True)),
-                ('is_suspended', models.BooleanField(db_index=True, default=False, help_text='Whether rider is suspended by admin')),
-                ('suspension_reason', models.TextField(blank=True, help_text='Reason for suspension', null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.OneToOneField(help_text='User account for the rider', on_delete=django.db.models.deletion.CASCADE, related_name='rider_profile', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("available", "Available"),
+                            ("busy", "Busy"),
+                            ("inactive", "Inactive"),
+                        ],
+                        db_index=True,
+                        default="available",
+                        help_text="Current availability status of the rider",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "availability",
+                    models.CharField(
+                        choices=[("available", "Available"), ("off-duty", "Off Duty")],
+                        db_index=True,
+                        default="available",
+                        help_text="Rider availability for accepting orders",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "current_location",
+                    django.contrib.gis.db.models.fields.PointField(
+                        blank=True,
+                        geography=True,
+                        help_text="Current GPS location of the rider",
+                        null=True,
+                        srid=4326,
+                    ),
+                ),
+                (
+                    "total_earnings",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=Decimal("0.00"),
+                        help_text="Total earnings accumulated by the rider",
+                        max_digits=10,
+                        validators=[
+                            django.core.validators.MinValueValidator(Decimal("0.00"))
+                        ],
+                    ),
+                ),
+                (
+                    "device_identifier",
+                    models.CharField(
+                        blank=True,
+                        help_text="Unique device identifier for security",
+                        max_length=255,
+                        null=True,
+                    ),
+                ),
+                (
+                    "is_suspended",
+                    models.BooleanField(
+                        db_index=True,
+                        default=False,
+                        help_text="Whether rider is suspended by admin",
+                    ),
+                ),
+                (
+                    "suspension_reason",
+                    models.TextField(
+                        blank=True, help_text="Reason for suspension", null=True
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        help_text="User account for the rider",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="rider_profile",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'riders',
-                'ordering': ['-created_at'],
+                "db_table": "riders",
+                "ordering": ["-created_at"],
             },
         ),
     ]

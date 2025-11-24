@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -15,20 +14,55 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Notification',
+            name="Notification",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=255)),
-                ('message', models.TextField()),
-                ('type', models.CharField(choices=[('order_update', 'Order Update'), ('payment', 'Payment'), ('system', 'System')], db_index=True, max_length=20)),
-                ('is_read', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='user_notifications', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=255)),
+                ("message", models.TextField()),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("order_update", "Order Update"),
+                            ("payment", "Payment"),
+                            ("system", "System"),
+                        ],
+                        db_index=True,
+                        max_length=20,
+                    ),
+                ),
+                ("is_read", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="user_notifications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'user_notifications',
-                'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['user', 'created_at'], name='user_notifi_user_id_94ad44_idx'), models.Index(fields=['user', 'is_read'], name='user_notifi_user_id_ea6762_idx')],
+                "db_table": "user_notifications",
+                "ordering": ["-created_at"],
+                "indexes": [
+                    models.Index(
+                        fields=["user", "created_at"],
+                        name="user_notifi_user_id_94ad44_idx",
+                    ),
+                    models.Index(
+                        fields=["user", "is_read"],
+                        name="user_notifi_user_id_ea6762_idx",
+                    ),
+                ],
             },
         ),
     ]

@@ -5,18 +5,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('inventory', '0001_initial'),
-        ('warehouses', '0001_initial'),
+        ("inventory", "0001_initial"),
+        ("warehouses", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='item',
-            name='warehouse',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='warehouses.warehouse'),
+            model_name="item",
+            name="warehouse",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="items",
+                to="warehouses.warehouse",
+            ),
         ),
     ]

@@ -16,6 +16,9 @@ class Config:
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_PORT = os.getenv("DB_PORT", "5432")
 
+    # Test Database URL (only used during Django test runs)
+    TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+
     # Supabase settings
     SUPABASE_URL = os.getenv("SUPABASE_URL")
     SUPABASE_KEY = os.getenv("SUPABASE_KEY")

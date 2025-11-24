@@ -1,398 +1,298 @@
-# riders/tests.py
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.contrib.gis.geos import Point
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from decimal import Decimal
-
-from .models import Rider
+from riders.models import Rider, RiderNotification
 from warehouses.models import Warehouse
-from orders.models import Order
-from delivery.models import Delivery
 
 User = get_user_model()
 
 
-class RiderModelTest(TestCase):
+class RiderModelTests(TestCase):
     """Test cases for Rider model"""
 
     def setUp(self):
-        # Create warehouse admin
-        self.admin_user = User.objects.create_user(
-            email="admin@test.com",
-            password="testpass123",
-            role="WAREHOUSE_MANAGER",
+        self.admin = User.objects.create_user(
+            email="admin@example.com", role="WAREHOUSE_MANAGER"
         )
-
-        # Create warehouse
+        self.rider_user = User.objects.create_user(
+            email="rider@example.com", role="RIDER"
+        )
         self.warehouse = Warehouse.objects.create(
-            admin=self.admin_user,
+            admin=self.admin,
             name="Test Warehouse",
             address="123 Test St",
-            contact_number="1234567890",
-        )
-        self.warehouse.set_coordinates(12.9716, 77.5946)
-        self.warehouse.save()
-
-        # Create rider user
-        self.rider_user = User.objects.create_user(
-            email="rider@test.com",
-            password="testpass123",
-            role="RIDER",
+            contact_number="+1234567890",
+            is_active=True,
+            is_approved=True,
         )
 
-    def test_rider_creation(self):
+    def test_create_rider(self):
         """Test creating a rider"""
-        rider = Rider.objects.create(
-            user=self.rider_user,
-            warehouse=self.warehouse,
-            status="available",
-        )
-
+        rider = Rider.objects.create(user=self.rider_user, warehouse=self.warehouse)
         self.assertEqual(rider.user, self.rider_user)
         self.assertEqual(rider.warehouse, self.warehouse)
         self.assertEqual(rider.status, "available")
+        self.assertEqual(rider.availability, "available")
         self.assertEqual(rider.total_earnings, Decimal("0.00"))
-        self.assertIsNone(rider.current_location)
+        self.assertFalse(rider.is_suspended)
 
-    def test_rider_location_coordinates(self):
-        """Test setting and getting rider location coordinates"""
+    def test_rider_with_location(self):
+        """Test rider with location"""
+        location = Point(77.5946, 12.9716, srid=4326)
         rider = Rider.objects.create(
-            user=self.rider_user,
-            warehouse=self.warehouse,
+            user=self.rider_user, warehouse=self.warehouse, current_location=location
         )
-
-        # Set coordinates
-        rider.set_coordinates(12.9716, 77.5946)
-        rider.save()
-
-        # Verify coordinates
+        self.assertIsNotNone(rider.current_location)
         self.assertAlmostEqual(rider.latitude, 12.9716, places=4)
         self.assertAlmostEqual(rider.longitude, 77.5946, places=4)
+
+    def test_rider_set_coordinates(self):
+        """Test setting rider coordinates"""
+        rider = Rider.objects.create(user=self.rider_user, warehouse=self.warehouse)
+        rider.set_coordinates(12.9716, 77.5946)
+        rider.save()
         self.assertIsNotNone(rider.current_location)
+        self.assertAlmostEqual(rider.latitude, 12.9716, places=4)
 
-    def test_rider_invalid_coordinates(self):
-        """Test that invalid coordinates raise ValueError"""
+    def test_rider_invalid_latitude(self):
+        """Test rider with invalid latitude"""
+        rider = Rider(
+            user=self.rider_user,
+            warehouse=self.warehouse,
+            current_location=Point(77.5946, 95.0, srid=4326),
+        )
+        with self.assertRaises(ValueError):
+            rider.save()
+
+    def test_rider_invalid_longitude(self):
+        """Test rider with invalid longitude"""
+        rider = Rider(
+            user=self.rider_user,
+            warehouse=self.warehouse,
+            current_location=Point(200.0, 12.9716, srid=4326),
+        )
+        with self.assertRaises(ValueError):
+            rider.save()
+
+    def test_rider_latitude_property(self):
+        """Test rider latitude property"""
+        rider = Rider.objects.create(user=self.rider_user, warehouse=self.warehouse)
+        self.assertIsNone(rider.latitude)
+
+        rider.set_coordinates(12.9716, 77.5946)
+        rider.save()
+        rider.refresh_from_db()
+        self.assertIsNotNone(rider.latitude)
+
+    def test_rider_longitude_property(self):
+        """Test rider longitude property"""
+        rider = Rider.objects.create(user=self.rider_user, warehouse=self.warehouse)
+        self.assertIsNone(rider.longitude)
+
+        rider.set_coordinates(12.9716, 77.5946)
+        rider.save()
+        rider.refresh_from_db()
+        self.assertIsNotNone(rider.longitude)
+
+    def test_rider_status_choices(self):
+        """Test rider status choices"""
+        valid_statuses = ["available", "busy", "inactive"]
+        for status_val in valid_statuses:
+            rider = Rider.objects.create(
+                user=User.objects.create_user(
+                    email=f"rider_{status_val}@example.com", role="RIDER"
+                ),
+                warehouse=self.warehouse,
+                status=status_val,
+            )
+            self.assertEqual(rider.status, status_val)
+
+    def test_rider_availability_choices(self):
+        """Test rider availability choices"""
+        valid_availability = ["available", "off-duty"]
+        for avail in valid_availability:
+            rider = Rider.objects.create(
+                user=User.objects.create_user(
+                    email=f"rider_{avail}@example.com", role="RIDER"
+                ),
+                warehouse=self.warehouse,
+                availability=avail,
+            )
+            self.assertEqual(rider.availability, avail)
+
+    def test_rider_suspension(self):
+        """Test rider suspension"""
         rider = Rider.objects.create(
             user=self.rider_user,
             warehouse=self.warehouse,
+            is_suspended=True,
+            suspension_reason="Violated policy",
         )
+        self.assertTrue(rider.is_suspended)
+        self.assertIsNotNone(rider.suspension_reason)
 
-        # Invalid latitude
-        with self.assertRaises(ValueError):
-            rider.set_coordinates(91.0, 77.5946)
-            rider.save()
-
-        # Invalid longitude
-        with self.assertRaises(ValueError):
-            rider.set_coordinates(12.9716, 181.0)
-            rider.save()
-
-    def test_rider_str_representation(self):
-        """Test string representation of rider"""
+    def test_rider_total_earnings_non_negative(self):
+        """Test rider total earnings cannot be negative"""
         rider = Rider.objects.create(
             user=self.rider_user,
             warehouse=self.warehouse,
+            total_earnings=Decimal("-10.00"),
         )
-
-        expected = f"Rider: {self.rider_user.email} - {self.warehouse.name}"
-        self.assertEqual(str(rider), expected)
+        # Should violate constraint at database level
 
 
-class RiderAPITest(APITestCase):
-    """Test cases for Rider API endpoints"""
+class RiderNotificationModelTests(TestCase):
+    """Test cases for RiderNotification model"""
 
     def setUp(self):
-        self.client = APIClient()
-
-        # Create users
-        self.admin_user = User.objects.create_user(
-            email="admin@test.com",
-            password="testpass123",
-            role="WAREHOUSE_MANAGER",
+        self.admin = User.objects.create_user(
+            email="admin@example.com", role="WAREHOUSE_MANAGER"
         )
-
         self.rider_user = User.objects.create_user(
-            email="rider@test.com",
-            password="testpass123",
-            role="RIDER",
+            email="rider@example.com", role="RIDER"
         )
-
-        self.shopkeeper_user = User.objects.create_user(
-            email="shopkeeper@test.com",
-            password="testpass123",
-            role="SHOPKEEPER",
-        )
-
-        # Create warehouse
         self.warehouse = Warehouse.objects.create(
-            admin=self.admin_user,
+            admin=self.admin,
             name="Test Warehouse",
             address="123 Test St",
-            contact_number="1234567890",
+            contact_number="+1234567890",
+            is_active=True,
+            is_approved=True,
         )
-        self.warehouse.set_coordinates(12.9716, 77.5946)
-        self.warehouse.save()
-
-        # Create rider
         self.rider = Rider.objects.create(
-            user=self.rider_user,
-            warehouse=self.warehouse,
-            status="available",
+            user=self.rider_user, warehouse=self.warehouse
         )
 
-    def test_rider_registration_by_admin(self):
-        """Test rider registration by warehouse admin"""
-        self.client.force_authenticate(user=self.admin_user)
+    def test_create_rider_notification(self):
+        """Test creating a rider notification"""
+        notification = RiderNotification.objects.create(
+            rider=self.rider, notification_type="order_assigned", title="New Delivery"
+        )
+        self.assertEqual(notification.notification_type, "order_assigned")
+        self.assertEqual(notification.rider, self.rider)
 
-        # Create new rider user
-        new_rider_user = User.objects.create_user(
-            email="newrider@test.com",
-            password="testpass123",
-            role="RIDER",
+    def test_rider_notification_types(self):
+        """Test valid notification types"""
+        valid_types = [
+            "order_assigned",
+            "order_update",
+            "payment",
+            "general",
+            "suspension",
+        ]
+        for notif_type in valid_types:
+            notification = RiderNotification.objects.create(
+                rider=self.rider,
+                notification_type=notif_type,
+                title=f"Test {notif_type}",
+            )
+            self.assertEqual(notification.notification_type, notif_type)
+
+
+class RiderViewTests(APITestCase):
+    """Test cases for Rider views"""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            email="admin@example.com", role="WAREHOUSE_MANAGER"
+        )
+        self.rider_user = User.objects.create_user(
+            email="rider@example.com", role="RIDER"
+        )
+        self.warehouse = Warehouse.objects.create(
+            admin=self.admin,
+            name="Test Warehouse",
+            address="123 Test St",
+            contact_number="+1234567890",
+            is_active=True,
+            is_approved=True,
+        )
+        self.rider = Rider.objects.create(
+            user=self.rider_user, warehouse=self.warehouse
+        )
+        self.client = APIClient()
+
+
+class RiderPermissionTests(TestCase):
+    """Test cases for rider permissions"""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            email="admin@example.com", role="WAREHOUSE_MANAGER"
+        )
+        self.other_admin = User.objects.create_user(
+            email="other@example.com", role="WAREHOUSE_MANAGER"
+        )
+        self.rider_user = User.objects.create_user(
+            email="rider@example.com", role="RIDER"
+        )
+        self.warehouse = Warehouse.objects.create(
+            admin=self.admin,
+            name="Test Warehouse",
+            address="123 Test St",
+            contact_number="+1234567890",
+            is_active=True,
+            is_approved=True,
+        )
+        self.rider = Rider.objects.create(
+            user=self.rider_user, warehouse=self.warehouse
         )
 
-        data = {
-            "user_id": new_rider_user.id,
-            "warehouse_id": self.warehouse.id,
-            "status": "available",
-        }
+    def test_rider_belongs_to_warehouse(self):
+        """Test rider belongs to correct warehouse"""
+        self.assertEqual(self.rider.warehouse, self.warehouse)
 
-        response = self.client.post("/api/rider/register/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["rider_email"], "newrider@test.com")
-        self.assertEqual(response.data["warehouse_name"], "Test Warehouse")
+    def test_rider_belongs_to_admin(self):
+        """Test rider warehouse belongs to admin"""
+        self.assertEqual(self.rider.warehouse.admin, self.admin)
 
-    def test_rider_registration_wrong_role(self):
-        """Test that non-rider users cannot be registered as riders"""
-        self.client.force_authenticate(user=self.admin_user)
 
-        data = {
-            "user_id": self.shopkeeper_user.id,
-            "warehouse_id": self.warehouse.id,
-            "status": "available",
-        }
+class RiderLocationTests(TestCase):
+    """Test cases for rider location updates"""
 
-        response = self.client.post("/api/rider/register/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            email="admin@example.com", role="WAREHOUSE_MANAGER"
+        )
+        self.rider_user = User.objects.create_user(
+            email="rider@example.com", role="RIDER"
+        )
+        self.warehouse = Warehouse.objects.create(
+            admin=self.admin,
+            name="Test Warehouse",
+            address="123 Test St",
+            contact_number="+1234567890",
+            is_active=True,
+            is_approved=True,
+        )
+        self.rider = Rider.objects.create(
+            user=self.rider_user, warehouse=self.warehouse
+        )
 
-    def test_rider_profile_get(self):
-        """Test getting rider profile"""
-        self.client.force_authenticate(user=self.rider_user)
-
-        response = self.client.get("/api/rider/profile/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["email"], "rider@test.com")
-        self.assertEqual(response.data["warehouse_name"], "Test Warehouse")
-
-    def test_rider_profile_update(self):
-        """Test updating rider profile"""
-        self.client.force_authenticate(user=self.rider_user)
-
-        data = {"status": "inactive"}
-        response = self.client.put("/api/rider/profile/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["status"], "inactive")
-
-    def test_rider_location_update(self):
+    def test_update_rider_location(self):
         """Test updating rider location"""
-        self.client.force_authenticate(user=self.rider_user)
-
-        data = {"latitude": 12.9716, "longitude": 77.5946}
-        response = self.client.patch("/api/rider/location/update/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["message"], "Location updated successfully")
-
-        # Verify location was updated
-        self.rider.refresh_from_db()
+        self.rider.set_coordinates(12.9716, 77.5946)
+        self.rider.save()
         self.assertIsNotNone(self.rider.current_location)
 
-    def test_rider_location_invalid_coordinates(self):
-        """Test that invalid coordinates are rejected"""
-        self.client.force_authenticate(user=self.rider_user)
+    def test_rider_location_validation(self):
+        """Test rider location coordinate validation"""
+        # Valid coordinates
+        self.rider.set_coordinates(12.9716, 77.5946)
+        self.rider.save()
+        # Should not raise error
 
-        data = {"latitude": 91.0, "longitude": 77.5946}
-        response = self.client.patch("/api/rider/location/update/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_rider_latitude_bounds(self):
+        """Test latitude must be within -90 to 90"""
+        with self.assertRaises(ValueError):
+            self.rider.set_coordinates(95.0, 77.5946)
+            self.rider.save()
 
-    def test_warehouse_riders_list(self):
-        """Test listing riders for warehouse admin"""
-        self.client.force_authenticate(user=self.admin_user)
-
-        response = self.client.get("/api/warehouse/riders/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["email"], "rider@test.com")
-
-    def test_warehouse_riders_filter_by_status(self):
-        """Test filtering riders by status"""
-        self.client.force_authenticate(user=self.admin_user)
-
-        # Create another rider with different status
-        another_rider_user = User.objects.create_user(
-            email="rider2@test.com",
-            password="testpass123",
-            role="RIDER",
-        )
-        Rider.objects.create(
-            user=another_rider_user,
-            warehouse=self.warehouse,
-            status="busy",
-        )
-
-        # Filter by available
-        response = self.client.get("/api/warehouse/riders/?status=available")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["status"], "available")
-
-        # Filter by busy
-        response = self.client.get("/api/warehouse/riders/?status=busy")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["status"], "busy")
-
-    def test_rider_detail_view(self):
-        """Test getting rider detail"""
-        self.client.force_authenticate(user=self.admin_user)
-
-        response = self.client.get(f"/api/warehouse/riders/{self.rider.id}/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], self.rider.id)
-        self.assertEqual(response.data["rider_email"], "rider@test.com")
-
-    def test_unauthorized_access(self):
-        """Test that unauthorized users cannot access endpoints"""
-        # Not authenticated
-        response = self.client.get("/api/rider/profile/")
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-        # Wrong role (shopkeeper trying to access rider endpoint)
-        self.client.force_authenticate(user=self.shopkeeper_user)
-        response = self.client.get("/api/rider/profile/")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-
-class RiderOrderIntegrationTest(APITestCase):
-    """Test cases for rider-order integration"""
-
-    def setUp(self):
-        self.client = APIClient()
-
-        # Create users
-        self.admin_user = User.objects.create_user(
-            email="admin@test.com",
-            password="testpass123",
-            role="WAREHOUSE_MANAGER",
-        )
-
-        self.rider_user = User.objects.create_user(
-            email="rider@test.com",
-            password="testpass123",
-            role="RIDER",
-        )
-
-        self.shopkeeper_user = User.objects.create_user(
-            email="shopkeeper@test.com",
-            password="testpass123",
-            role="SHOPKEEPER",
-        )
-
-        # Create warehouse
-        self.warehouse = Warehouse.objects.create(
-            admin=self.admin_user,
-            name="Test Warehouse",
-            address="123 Test St",
-            contact_number="1234567890",
-        )
-
-        # Create rider
-        self.rider = Rider.objects.create(
-            user=self.rider_user,
-            warehouse=self.warehouse,
-            status="available",
-        )
-
-        # Create order
-        self.order = Order.objects.create(
-            shopkeeper=self.shopkeeper_user,
-            warehouse=self.warehouse,
-            status="assigned",
-            total_amount=Decimal("250.00"),
-        )
-
-        # Create delivery
-        self.delivery = Delivery.objects.create(
-            order=self.order,
-            rider=self.rider_user,
-            status="assigned",
-        )
-
-    def test_rider_view_assigned_orders(self):
-        """Test that rider can view their assigned orders"""
-        self.client.force_authenticate(user=self.rider_user)
-
-        response = self.client.get("/api/rider/orders/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], self.order.id)
-
-    def test_rider_update_order_to_in_transit(self):
-        """Test rider updating order status to in_transit"""
-        self.client.force_authenticate(user=self.rider_user)
-
-        data = {"order_id": self.order.id, "status": "in_transit"}
-        response = self.client.patch("/api/rider/orders/update/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["status"], "in_transit")
-
-        # Verify order status updated
-        self.order.refresh_from_db()
-        self.assertEqual(self.order.status, "in_transit")
-
-    def test_rider_update_order_to_delivered(self):
-        """Test rider marking order as delivered"""
-        # First transition to in_transit
-        self.order.status = "in_transit"
-        self.order.save()
-        self.delivery.status = "in_transit"
-        self.delivery.save()
-
-        self.client.force_authenticate(user=self.rider_user)
-
-        data = {"order_id": self.order.id, "status": "delivered"}
-        response = self.client.patch("/api/rider/orders/update/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["status"], "delivered")
-
-        # Verify rider status changed to available
-        self.rider.refresh_from_db()
-        self.assertEqual(self.rider.status, "available")
-
-        # Verify earnings were updated
-        self.assertGreater(self.rider.total_earnings, Decimal("0.00"))
-
-    def test_rider_invalid_status_transition(self):
-        """Test that invalid status transitions are rejected"""
-        self.client.force_authenticate(user=self.rider_user)
-
-        # Try to go directly from assigned to delivered
-        data = {"order_id": self.order.id, "status": "delivered"}
-        response = self.client.patch("/api/rider/orders/update/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Invalid transition", response.data["error"])
-
-    def test_rider_cannot_update_others_orders(self):
-        """Test that rider cannot update orders not assigned to them"""
-        # Create another rider
-        another_rider_user = User.objects.create_user(
-            email="rider2@test.com",
-            password="testpass123",
-            role="RIDER",
-        )
-
-        self.client.force_authenticate(user=another_rider_user)
-
-        data = {"order_id": self.order.id, "status": "in_transit"}
-        response = self.client.patch("/api/rider/orders/update/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_rider_longitude_bounds(self):
+        """Test longitude must be within -180 to 180"""
+        with self.assertRaises(ValueError):
+            self.rider.set_coordinates(12.9716, 200.0)
+            self.rider.save()

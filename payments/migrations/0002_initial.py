@@ -5,60 +5,73 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('payments', '0001_initial'),
-        ('riders', '0001_initial'),
-        ('warehouses', '0001_initial'),
+        ("payments", "0001_initial"),
+        ("riders", "0001_initial"),
+        ("warehouses", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='payout',
-            name='rider',
-            field=models.ForeignKey(help_text='Rider receiving the payout', on_delete=django.db.models.deletion.CASCADE, related_name='payment_payouts', to='riders.rider'),
+            model_name="payout",
+            name="rider",
+            field=models.ForeignKey(
+                help_text="Rider receiving the payout",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="payment_payouts",
+                to="riders.rider",
+            ),
         ),
         migrations.AddField(
-            model_name='payout',
-            name='warehouse',
-            field=models.ForeignKey(help_text='Warehouse processing the payout', on_delete=django.db.models.deletion.CASCADE, related_name='payouts', to='warehouses.warehouse'),
+            model_name="payout",
+            name="warehouse",
+            field=models.ForeignKey(
+                help_text="Warehouse processing the payout",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="payouts",
+                to="warehouses.warehouse",
+            ),
         ),
         migrations.AddIndex(
-            model_name='payment',
-            index=models.Index(fields=['status'], name='payments_pa_status_7ad4af_idx'),
+            model_name="payment",
+            index=models.Index(fields=["status"], name="payments_pa_status_7ad4af_idx"),
         ),
         migrations.AddIndex(
-            model_name='payment',
-            index=models.Index(fields=['order'], name='payments_pa_order_i_1d1c93_idx'),
+            model_name="payment",
+            index=models.Index(fields=["order"], name="payments_pa_order_i_1d1c93_idx"),
         ),
         migrations.AddIndex(
-            model_name='payment',
-            index=models.Index(fields=['payer'], name='payments_pa_payer_i_fc2b89_idx'),
+            model_name="payment",
+            index=models.Index(fields=["payer"], name="payments_pa_payer_i_fc2b89_idx"),
         ),
         migrations.AddIndex(
-            model_name='payment',
-            index=models.Index(fields=['payee'], name='payments_pa_payee_i_e6f536_idx'),
+            model_name="payment",
+            index=models.Index(fields=["payee"], name="payments_pa_payee_i_e6f536_idx"),
         ),
         migrations.AlterUniqueTogether(
-            name='payment',
-            unique_together={('order', 'payer')},
+            name="payment",
+            unique_together={("order", "payer")},
         ),
         migrations.AddIndex(
-            model_name='payout',
-            index=models.Index(fields=['status'], name='payments_pa_status_d49350_idx'),
+            model_name="payout",
+            index=models.Index(fields=["status"], name="payments_pa_status_d49350_idx"),
         ),
         migrations.AddIndex(
-            model_name='payout',
-            index=models.Index(fields=['rider'], name='payments_pa_rider_i_f69b72_idx'),
+            model_name="payout",
+            index=models.Index(fields=["rider"], name="payments_pa_rider_i_f69b72_idx"),
         ),
         migrations.AddIndex(
-            model_name='payout',
-            index=models.Index(fields=['warehouse'], name='payments_pa_warehou_73ea3e_idx'),
+            model_name="payout",
+            index=models.Index(
+                fields=["warehouse"], name="payments_pa_warehou_73ea3e_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='payout',
-            index=models.Index(fields=['created_at'], name='payments_pa_created_465e24_idx'),
+            model_name="payout",
+            index=models.Index(
+                fields=["created_at"], name="payments_pa_created_465e24_idx"
+            ),
         ),
     ]
