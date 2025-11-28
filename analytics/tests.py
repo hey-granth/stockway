@@ -81,6 +81,7 @@ class AnalyticsSummaryModelTests(TestCase):
     def test_analytics_unique_constraint(self):
         """Test unique constraint on ref_type, ref_id, and date"""
         from django.db import IntegrityError
+
         metrics = {"count": 1}
         # Use non-NULL ref_id since PostgreSQL doesn't enforce uniqueness on NULL values
         AnalyticsSummary.objects.create(

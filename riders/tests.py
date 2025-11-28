@@ -137,11 +137,12 @@ class RiderModelTests(TestCase):
     def test_rider_total_earnings_non_negative(self):
         """Test rider total earnings cannot be negative"""
         from django.db import IntegrityError
+
         with self.assertRaises(IntegrityError):
             Rider.objects.create(
                 user=self.rider_user,
                 warehouse=self.warehouse,
-                total_earnings=Decimal("-10.00")
+                total_earnings=Decimal("-10.00"),
             )
 
 

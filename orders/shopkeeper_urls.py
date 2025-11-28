@@ -13,4 +13,3 @@ urlpatterns = [
     path("orders/", ShopkeeperOrderListView.as_view(), name="order-list"),
     path("orders/<int:pk>/", ShopkeeperOrderDetailView.as_view(), name="order-detail"),
 ]
-

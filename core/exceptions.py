@@ -164,10 +164,20 @@ def custom_exception_handler(exc, context):
 
             # Convert 403 to 401 for unauthenticated users
             # This ensures consistency: unauthenticated = 401, unauthorized = 403
-            if response.status_code == 403 and request and (not hasattr(request, "user") or not request.user or not request.user.is_authenticated):
+            if (
+                response.status_code == 403
+                and request
+                and (
+                    not hasattr(request, "user")
+                    or not request.user
+                    or not request.user.is_authenticated
+                )
+            ):
                 response.status_code = 401
                 if isinstance(response.data, dict) and "detail" in response.data:
-                    response.data["detail"] = "Authentication credentials were not provided."
+                    response.data["detail"] = (
+                        "Authentication credentials were not provided."
+                    )
 
             # Standardize error format
             if isinstance(response.data, dict):
