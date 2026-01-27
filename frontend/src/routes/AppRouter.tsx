@@ -3,8 +3,10 @@ import { useAuthStore } from '@/store/authStore';
 import PrivateRoute from './PrivateRoute';
 import RoleBasedRoute from './RoleBasedRoute';
 
-// Auth Pages
+// Landing & Auth Pages
+import LandingPage from '@/pages/common/LandingPage';
 import LoginPage from '@/pages/auth/LoginPage';
+import SignUpPage from '@/pages/auth/SignUpPage';
 
 // Shopkeeper Pages
 import ShopkeeperLayout from '@/pages/shopkeeper/ShopkeeperLayout';
@@ -42,34 +44,46 @@ import WarehouseManagement from '@/pages/admin/WarehouseManagement';
 // Common Pages
 import NotFoundPage from '@/pages/common/NotFoundPage';
 import UnauthorizedPage from '@/pages/common/UnauthorizedPage';
-import SignUpPage from "@/pages/auth/SignUpPage.tsx";
 import DocsPage from '@/pages/common/DocsPage';
 
+// Dashboard redirect component
+function DashboardRedirect() {
+  const { user } = useAuthStore();
+
+  switch (user?.role) {
+    case 'SHOPKEEPER':
+      return <Navigate to="/shopkeeper/dashboard" replace />;
+    case 'WAREHOUSE_MANAGER':
+      return <Navigate to="/warehouse/dashboard" replace />;
+    case 'RIDER':
+      return <Navigate to="/rider/dashboard" replace />;
+    case 'SUPER_ADMIN':
+      return <Navigate to="/admin/dashboard" replace />;
+    default:
+      return <Navigate to="/" replace />;
+  }
+}
+
 export default function AppRouter() {
-  const { isAuthenticated, user } = useAuthStore();
-
-  // Redirect root based on authentication and role
-  const getRootRedirect = () => {
-    if (!isAuthenticated) return '/login';
-
-    switch (user?.role) {
-      case 'SHOPKEEPER':
-        return '/shopkeeper/dashboard';
-      case 'WAREHOUSE_MANAGER':
-        return '/warehouse/dashboard';
-      case 'RIDER':
-        return '/rider/dashboard';
-      case 'SUPER_ADMIN':
-        return '/admin/dashboard';
-      default:
-        return '/login';
-    }
-  };
+  const { isAuthenticated } = useAuthStore();
 
   return (
     <Routes>
-      {/* Root redirect */}
-      <Route path="/" element={<Navigate to={getRootRedirect()} replace />} />
+      {/* Landing page - public route */}
+      <Route
+        path="/"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />}
+      />
+
+      {/* Dashboard redirect based on role */}
+      <Route
+        path="/dashboard"
+        element={
+          <PrivateRoute>
+            <DashboardRedirect />
+          </PrivateRoute>
+        }
+      />
 
       {/* Public documentation route */}
       <Route path="/docs" element={<DocsPage />} />

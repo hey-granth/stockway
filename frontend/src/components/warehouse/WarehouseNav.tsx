@@ -24,6 +24,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useAuthStore } from '@/store/authStore';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
 const DRAWER_WIDTH = 260;
 
@@ -58,10 +59,11 @@ export default function WarehouseNav() {
 
   const drawerContent = (
     <>
-      <Toolbar sx={{ px: 2, py: 3 }}>
+      <Toolbar sx={{ px: 2, py: 3, display: 'flex', justifyContent: 'space-between' }}>
         <Typography variant="h6" fontWeight="bold" color="primary">
           Stockway
         </Typography>
+        <ThemeToggle />
       </Toolbar>
       <Divider />
       <Box sx={{ px: 2, py: 2 }}>

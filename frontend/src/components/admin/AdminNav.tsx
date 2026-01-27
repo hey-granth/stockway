@@ -20,6 +20,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuthStore } from '@/store/authStore';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
 const DRAWER_WIDTH = 260;
 
@@ -48,10 +49,11 @@ export default function AdminNav() {
 
   const drawerContent = (
     <>
-      <Toolbar sx={{ px: 2, py: 3 }}>
+      <Toolbar sx={{ px: 2, py: 3, display: 'flex', justifyContent: 'space-between' }}>
         <Typography variant="h6" fontWeight="bold" color="primary">
           Stockway Admin
         </Typography>
+        <ThemeToggle />
       </Toolbar>
       <Divider />
       <Box sx={{ px: 2, py: 2 }}>
