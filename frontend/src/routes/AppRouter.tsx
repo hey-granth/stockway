@@ -45,6 +45,7 @@ import WarehouseManagement from '@/pages/admin/WarehouseManagement';
 import NotFoundPage from '@/pages/common/NotFoundPage';
 import UnauthorizedPage from '@/pages/common/UnauthorizedPage';
 import DocsPage from '@/pages/common/DocsPage';
+import ContactPage from '@/pages/common/ContactPage';
 
 // Dashboard redirect component
 function DashboardRedirect() {
@@ -87,6 +88,7 @@ export default function AppRouter() {
 
       {/* Public documentation route */}
       <Route path="/docs" element={<DocsPage />} />
+      <Route path="/contact" element={<ContactPage />} />
 
       {/* Auth routes */}
       <Route path="/login" element={<LoginPage />} />

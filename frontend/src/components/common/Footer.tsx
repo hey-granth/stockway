@@ -28,18 +28,7 @@ export default function Footer() {
                         <Grid container spacing={4} justifyContent={{ sm: 'flex-end' }}>
                             <Grid item xs={6} sm={3}>
                                 <Typography variant="subtitle2" color="text.primary" gutterBottom fontWeight={600}>
-                                    Product
-                                </Typography>
-                                <Link component={RouterLink} to="/docs" color="text.secondary" display="block" sx={{ mb: 1, textDecoration: 'none', '&:hover': { color: 'text.primary' } }}>
-                                    Docs
-                                </Link>
-                                <Link component={RouterLink} to="/login" color="text.secondary" display="block" sx={{ mb: 1, textDecoration: 'none', '&:hover': { color: 'text.primary' } }}>
-                                    Login
-                                </Link>
-                            </Grid>
-                            <Grid item xs={6} sm={3}>
-                                <Typography variant="subtitle2" color="text.primary" gutterBottom fontWeight={600}>
-                                    Company
+                                    Creator
                                 </Typography>
                                 <Link
                                     href="https://github.com/hey-granth/stockway"
@@ -51,8 +40,36 @@ export default function Footer() {
                                 >
                                     GitHub
                                 </Link>
-                                <Link component={RouterLink} to="/admin" color="text.secondary" display="block" sx={{ mb: 1, textDecoration: 'none', '&:hover': { color: 'text.primary' }, opacity: 0.7 }}>
-                                    Admin
+                                <Link
+                                    href="https://x.com/heygranth"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    color="text.secondary"
+                                    display="block"
+                                    sx={{ mb: 1, textDecoration: 'none', '&:hover': { color: 'text.primary' } }}
+                                >
+                                    X (Twitter)
+                                </Link>
+                                <Link
+                                    href="https://linkedin.com/in/granth-agarwal"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    color="text.secondary"
+                                    display="block"
+                                    sx={{ mb: 1, textDecoration: 'none', '&:hover': { color: 'text.primary' } }}
+                                >
+                                    LinkedIn
+                                </Link>
+                            </Grid>
+                            <Grid item xs={6} sm={3}>
+                                <Typography variant="subtitle2" color="text.primary" gutterBottom fontWeight={600}>
+                                    Links
+                                </Typography>
+                                <Link component={RouterLink} to="/contact" color="text.secondary" display="block" sx={{ mb: 1, textDecoration: 'none', '&:hover': { color: 'text.primary' } }}>
+                                    Contact
+                                </Link>
+                                <Link component={RouterLink} to="/login" color="text.secondary" display="block" sx={{ mb: 1, textDecoration: 'none', '&:hover': { color: 'text.primary' } }}>
+                                    Login
                                 </Link>
                             </Grid>
                         </Grid>
@@ -62,7 +79,7 @@ export default function Footer() {
                     <Typography variant="body2" color="text.secondary" align="center">
                         {'© '}
                         {new Date().getFullYear()}
-                        {' Stockway. All rights reserved.'}
+                        {' Stockway. Built by Granth Agarwal.'}
                     </Typography>
                 </Box>
             </Container>

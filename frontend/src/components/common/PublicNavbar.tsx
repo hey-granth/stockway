@@ -50,6 +50,20 @@ export default function PublicNavbar() {
               >
                 Docs
               </Link>
+              <Link
+                component={RouterLink}
+                to="/contact"
+                underline="none"
+                sx={{
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  '&:hover': { color: 'text.primary' },
+                  transition: 'color 0.2s',
+                }}
+              >
+                Contact
+              </Link>
             </Box>
           </Box>
 
