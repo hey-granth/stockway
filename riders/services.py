@@ -22,11 +22,42 @@ class RedisService:
         redis_host = getattr(Config, "REDIS_HOST", "localhost")
         redis_port = getattr(Config, "REDIS_PORT", 6379)
         redis_db = getattr(Config, "REDIS_DB", 0)
+        redis_password = getattr(Config, "REDIS_PASSWORD", None)
+
+        # Check if using Upstash Redis (production)
+        upstash_url = getattr(Config, "UPSTASH_REDIS_REST_URL", None)
+        upstash_token = getattr(Config, "UPSTASH_REDIS_REST_TOKEN", None)
 
         try:
-            self.redis_client = redis.Redis(
-                host=redis_host, port=redis_port, db=redis_db, decode_responses=True
-            )
+            if upstash_url and upstash_token:
+                # Production: Use Upstash Redis with SSL
+                import re
+                match = re.search(r"https://([^:]+):?(\d+)?", upstash_url)
+                if match:
+                    redis_host = match.group(1)
+                    redis_port = int(match.group(2) or "6379")
+                    redis_password = upstash_token
+
+                    self.redis_client = redis.Redis(
+                        host=redis_host,
+                        port=redis_port,
+                        password=redis_password,
+                        ssl=True,
+                        ssl_cert_reqs=None,
+                        decode_responses=True
+                    )
+                else:
+                    raise ValueError("Invalid Upstash Redis URL format")
+            else:
+                # Development: Use local Redis
+                self.redis_client = redis.Redis(
+                    host=redis_host,
+                    port=redis_port,
+                    db=redis_db,
+                    password=redis_password,
+                    decode_responses=True
+                )
+
             self.redis_client.ping()
         except Exception as e:
             logger.warning(f"Redis connection failed: {e}. Using fallback mode.")

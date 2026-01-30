@@ -26,7 +26,30 @@ SECRET_KEY = Config.SECRET_KEY
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = Config.DEBUG
 
+# ALLOWED_HOSTS configuration for production
 ALLOWED_HOSTS = []
+
+if not DEBUG:
+    # Production: Allow Render domain and any custom domains
+    if Config.RENDER_EXTERNAL_URL:
+        # Extract hostname from Render URL (e.g., https://app.onrender.com -> app.onrender.com)
+        import re
+        match = re.search(r"https?://([^/]+)", Config.RENDER_EXTERNAL_URL)
+        if match:
+            ALLOWED_HOSTS.append(match.group(1))
+
+    # Allow all .onrender.com domains in production
+    ALLOWED_HOSTS.extend([".onrender.com"])
+
+    # Add any additional allowed hosts from environment
+    additional_hosts = Config.CORS_ALLOWED_ORIGINS
+    for origin in additional_hosts:
+        match = re.search(r"https?://([^/]+)", origin)
+        if match:
+            ALLOWED_HOSTS.append(match.group(1))
+else:
+    # Development: Allow localhost and common dev hosts
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
 
 
 # Application definition
@@ -191,9 +214,13 @@ REST_FRAMEWORK = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": Config.get_redis_url(),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # SSL options for Upstash/production
+            "CONNECTION_POOL_KWARGS": {
+                "ssl_cert_reqs": None if not Config.DEBUG else None,
+            },
         },
     }
 }
@@ -302,11 +329,24 @@ CORS_ALLOW_HEADERS = [
 # CELERY CONFIGURATION
 # ===========================
 
-# Celery broker (RabbitMQ)
-CELERY_BROKER_URL = "amqp://guest:guest@localhost:5672//"
+# Dynamic broker and backend configuration based on environment
+CELERY_BROKER_URL = Config.get_redis_url()
+CELERY_RESULT_BACKEND = Config.get_redis_url()
 
-# Celery result backend (Redis)
-CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+# Celery broker connection retry settings
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
+
+# SSL configuration for Upstash Redis
+if Config.UPSTASH_REDIS_REST_URL:
+    # Production: Upstash requires SSL
+    CELERY_REDIS_BACKEND_USE_SSL = {
+        "ssl_cert_reqs": "none",  # Upstash uses verified certs, but we skip client verification
+    }
+    CELERY_BROKER_USE_SSL = {
+        "ssl_cert_reqs": "none",
+    }
 
 # Celery task settings
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -316,6 +356,16 @@ CELERY_TIMEZONE = "UTC"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes
+
+# Task result settings
+CELERY_RESULT_EXPIRES = 3600  # 1 hour - results expire after 1 hour
+CELERY_TASK_IGNORE_RESULT = False  # Keep results for monitoring
+
+# Worker settings for production
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Disable prefetching for fair task distribution
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000  # Recycle worker after 1000 tasks
+CELERY_TASK_ACKS_LATE = True  # Acknowledge task after completion (safer for retries)
+CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Requeue tasks if worker crashes
 
 # Celery queue routing
 CELERY_TASK_ROUTES = {
@@ -434,3 +484,5 @@ LOGGING = {
 import os
 
 os.makedirs(BASE_DIR / "logs", exist_ok=True)
+
+DISABLE_COLLECTSTATIC = True

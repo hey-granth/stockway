@@ -1,0 +1,112 @@
+# Blueprint for Render deployment
+# Place this file in your repository root
+# Render will automatically detect and deploy these services
+
+services:
+  # Django Web Service
+  - type: web
+    name: stockway-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start_web.sh
+    healthCheckPath: /health/
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_DB_HOST
+        sync: false
+      - key: SUPABASE_DB_PORT
+        value: 5432
+      - key: SUPABASE_DB_NAME
+        value: postgres
+      - key: SUPABASE_DB_USER
+        value: postgres
+      - key: SUPABASE_DB_PASSWORD
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: RENDER_EXTERNAL_URL
+        value: https://stockway-backend.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+  # Celery Worker Service
+  - type: worker
+    name: stockway-worker
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start_celery_worker.sh
+    envVars:
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: stockway-backend
+          envVarKey: SECRET_KEY
+      - key: DEBUG
+        value: False
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: SUPABASE_URL
+        fromService:
+          type: web
+          name: stockway-backend
+          envVarKey: SUPABASE_URL
+      - key: SUPABASE_KEY
+        fromService:
+          type: web
+          name: stockway-backend
+          envVarKey: SUPABASE_KEY
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        fromService:
+          type: web
+          name: stockway-backend
+          envVarKey: SUPABASE_SERVICE_ROLE_KEY
+      - key: SUPABASE_JWT_SECRET
+        fromService:
+          type: web
+          name: stockway-backend
+          envVarKey: SUPABASE_JWT_SECRET
+      - key: SUPABASE_DB_HOST
+        fromService:
+          type: web
+          name: stockway-backend
+          envVarKey: SUPABASE_DB_HOST
+      - key: SUPABASE_DB_PORT
+        value: 5432
+      - key: SUPABASE_DB_NAME
+        value: postgres
+      - key: SUPABASE_DB_USER
+        value: postgres
+      - key: SUPABASE_DB_PASSWORD
+        fromService:
+          type: web
+          name: stockway-backend
+          envVarKey: SUPABASE_DB_PASSWORD
+      - key: UPSTASH_REDIS_REST_URL
+        fromService:
+          type: web
+          name: stockway-backend
+          envVarKey: UPSTASH_REDIS_REST_URL
+      - key: UPSTASH_REDIS_REST_TOKEN
+        fromService:
+          type: web
+          name: stockway-backend
+          envVarKey: UPSTASH_REDIS_REST_TOKEN

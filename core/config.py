@@ -48,6 +48,35 @@ class Config:
     REDIS_DB = int(os.getenv("REDIS_DB", "0"))
     REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 
+    # Upstash Redis settings for production (Celery broker/result backend)
+    UPSTASH_REDIS_REST_URL = os.getenv("UPSTASH_REDIS_REST_URL")
+    UPSTASH_REDIS_REST_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN")
+
+    # Render deployment settings
+    RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL")
+
+    @classmethod
+    def get_redis_url(cls):
+        """
+        Get Redis connection URL based on environment.
+        Returns Upstash Redis URL for production, local Redis for development.
+        """
+        # Production: Use Upstash Redis (REST API converted to Redis protocol URL)
+        if cls.UPSTASH_REDIS_REST_URL and cls.UPSTASH_REDIS_REST_TOKEN:
+            # Extract host and port from REST URL
+            # Format: https://host:port
+            import re
+            match = re.search(r"https://([^:]+):?(\d+)?", cls.UPSTASH_REDIS_REST_URL)
+            if match:
+                host = match.group(1)
+                port = match.group(2) or "6379"
+                # Construct rediss:// URL with password (token)
+                return f"rediss://:{cls.UPSTASH_REDIS_REST_TOKEN}@{host}:{port}"
+
+        # Development: Use local Redis
+        password_part = f":{cls.REDIS_PASSWORD}@" if cls.REDIS_PASSWORD else ""
+        return f"redis://{password_part}{cls.REDIS_HOST}:{cls.REDIS_PORT}/{cls.REDIS_DB}"
+
     @classmethod
     def validate(cls):
         """Validate required configuration"""

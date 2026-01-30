@@ -32,6 +32,7 @@ dependencies = [
     "faker==38.2.0",
     "gprof2dot==2025.4.14",
     "graphviz>=0.21",
+    "gunicorn>=24.1.1",
     "h11==0.16.0",
     "h2==4.3.0",
     "hpack==4.1.0",
