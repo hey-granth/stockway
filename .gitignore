@@ -34,3 +34,12 @@ coverage.xml
 .marscode/
 .env
 .marscode
+load_tests/*.csv
+load_tests/*.html
+test_output.txt
+test_dashboard.html
+dump.rdb
+celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+logs/

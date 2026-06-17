@@ -75,10 +75,20 @@ class Payout(models.Model):
 
     STATUS_CHOICES: tuple[tuple[str, str], ...] = (
         ("pending", "Pending"),
+        ("processed", "Processed"),
+        ("paid", "Paid"),
         ("settled", "Settled"),
     )
 
     # Related entities
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="payouts",
+        help_text="Order this payout is associated with",
+    )
     rider = models.ForeignKey(
         Rider,
         on_delete=models.CASCADE,
@@ -89,13 +99,18 @@ class Payout(models.Model):
         Warehouse,
         on_delete=models.CASCADE,
         related_name="payouts",
+        null=True,
+        blank=True,
         help_text="Warehouse processing the payout",
     )
 
     # Payout calculation fields
-    total_distance: float = models.FloatField(help_text="Total distance in kilometers")
+    total_distance: float = models.FloatField(
+        null=True, blank=True, help_text="Total distance in kilometers"
+    )
     rate_per_km: Decimal = models.DecimalField(
-        max_digits=6, decimal_places=2, help_text="Rate per kilometer"
+        max_digits=6, decimal_places=2, null=True, blank=True,
+        help_text="Rate per kilometer",
     )
     computed_amount: Decimal = models.DecimalField(
         max_digits=10, decimal_places=2, help_text="Computed payout amount"

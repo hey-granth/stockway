@@ -675,8 +675,11 @@ class RiderNotificationsView(ListAPIView):
     pagination_class = StandardResultsPagination
 
     def get_queryset(self):
-        rider = Rider.objects.get(user=self.request.user)
-        queryset = RiderNotification.objects.filter(rider=rider)
+        try:
+            rider = Rider.objects.get(user=self.request.user)
+            queryset = RiderNotification.objects.filter(rider=rider)
+        except Rider.DoesNotExist:
+            return RiderNotification.objects.none()
 
         # Filter by read/unread
         is_read = self.request.query_params.get("is_read")
@@ -698,6 +701,10 @@ class RiderNotificationMarkReadView(APIView):
         try:
             rider = Rider.objects.get(user=request.user)
             notification = RiderNotification.objects.get(id=pk, rider=rider)
+        except Rider.DoesNotExist:
+            return Response(
+                {"error": "Rider profile not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
             notification.is_read = True
             notification.save()

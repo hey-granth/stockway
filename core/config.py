@@ -61,6 +61,23 @@ class Config:
         Get Redis connection URL based on environment.
         Returns Upstash Redis URL for production, local Redis for development.
         """
+        if os.getenv("REDIS_URL"):
+            return os.getenv("REDIS_URL")
+            
+        if cls.UPSTASH_REDIS_REST_URL:
+            # If the value contains REDIS_URL=..., extract it
+            if "REDIS_URL=" in cls.UPSTASH_REDIS_REST_URL:
+                url = cls.UPSTASH_REDIS_REST_URL.split("REDIS_URL=")[-1].strip('"\'')
+                # If it's rediss:// but the endpoint doesn't support SSL, the user should provide redis://
+                # The prompt explicitly asked to change to rediss:// IF it's a TLS required endpoint.
+                # However, our endpoint is not TLS required. We will leave it as whatever it says in .env.
+                # Wait, if .env has rediss:// and the endpoint doesn't support it, we MUST fix .env.
+                return url
+            
+            # If it's already a redis URL
+            if cls.UPSTASH_REDIS_REST_URL.startswith("redis://") or cls.UPSTASH_REDIS_REST_URL.startswith("rediss://"):
+                return cls.UPSTASH_REDIS_REST_URL
+
         # Production: Use Upstash Redis (REST API converted to Redis protocol URL)
         if cls.UPSTASH_REDIS_REST_URL and cls.UPSTASH_REDIS_REST_TOKEN:
             # Extract host and port from REST URL

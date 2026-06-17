@@ -211,19 +211,24 @@ REST_FRAMEWORK = {
     ),
 }
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": Config.get_redis_url(),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            # SSL options for Upstash/production
-            "CONNECTION_POOL_KWARGS": {
-                "ssl_cert_reqs": None if not Config.DEBUG else None,
-            },
-        },
+CACHES = (
+    {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
     }
-}
+    if TESTING
+    else {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": Config.get_redis_url(),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                **({"CONNECTION_POOL_KWARGS": {"ssl_cert_reqs": None}} if Config.get_redis_url().startswith("rediss://") else {})
+            },
+        }
+    }
+)
 
 # Supabase Configuration
 SUPABASE_URL = Config.SUPABASE_URL
@@ -339,10 +344,10 @@ CELERY_BROKER_CONNECTION_RETRY = True
 CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
 
 # SSL configuration for Upstash Redis
-if Config.UPSTASH_REDIS_REST_URL:
+if Config.get_redis_url().startswith("rediss://"):
     # Production: Upstash requires SSL
     CELERY_REDIS_BACKEND_USE_SSL = {
-        "ssl_cert_reqs": "none",  # Upstash uses verified certs, but we skip client verification
+        "ssl_cert_reqs": "none",
     }
     CELERY_BROKER_USE_SSL = {
         "ssl_cert_reqs": "none",

@@ -257,9 +257,9 @@ class ItemImageTests(TestCase):
             sku="TEST-IMG-001",
             price=Decimal("50.00"),
             quantity=100,
-            image="https://example.com/image.jpg",
+            image_url="https://example.com/image.jpg",
         )
-        self.assertEqual(item.image, "https://example.com/image.jpg")
+        self.assertEqual(item.image_url, "https://example.com/image.jpg")
 
     def test_item_without_image(self):
         """Test creating item without image"""
@@ -270,7 +270,7 @@ class ItemImageTests(TestCase):
             price=Decimal("50.00"),
             quantity=100,
         )
-        self.assertFalse(item.image)
+        self.assertFalse(item.image_url)
 
 
 class ItemSoftDeleteTests(TestCase):

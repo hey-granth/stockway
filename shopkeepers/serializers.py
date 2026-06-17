@@ -216,9 +216,6 @@ class SupportTicketSerializer(serializers.ModelSerializer):
     priority_display = serializers.CharField(
         source="get_priority_display", read_only=True
     )
-    order_id = serializers.IntegerField(
-        source="order.id", read_only=True, allow_null=True
-    )
 
     class Meta:
         model = SupportTicket
@@ -228,7 +225,6 @@ class SupportTicketSerializer(serializers.ModelSerializer):
             "category_display",
             "subject",
             "description",
-            "order_id",
             "status",
             "status_display",
             "priority",
@@ -252,7 +248,7 @@ class SupportTicketCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SupportTicket
-        fields = ["category", "subject", "description", "order"]
+        fields = ["category", "subject", "description"]
 
     def create(self, validated_data):
         user = self.context["request"].user

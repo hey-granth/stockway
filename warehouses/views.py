@@ -19,7 +19,7 @@ from .permissions import IsWarehouseAdminOrReadOnly
 from inventory.models import Item
 from inventory.serializers import ItemSerializer
 from orders.models import Order
-from orders.serializers import OrderSerializer
+from orders.serializers import OrderSerializer, OrderListSerializer
 from riders.models import Rider
 from .geo_services import find_nearest_available_rider
 
@@ -138,7 +138,7 @@ class WarehouseViewSet(viewsets.ModelViewSet):
         """List orders for a warehouse"""
         warehouse = self.get_object()
         orders = Order.objects.filter(warehouse=warehouse).annotate(
-            items_count=Count("items")
+            items_count=Count("order_items")
         )
 
         # Apply filters
@@ -331,11 +331,11 @@ class WarehouseViewSet(viewsets.ModelViewSet):
         if status_filter == "active":
             orders = Order.objects.filter(
                 warehouse=warehouse, status__in=["assigned", "picked_up", "in_transit"]
-            ).annotate(items_count=Count("items"))
+            ).annotate(items_count=Count("order_items"))
         else:
             orders = Order.objects.filter(
                 warehouse=warehouse, status=status_filter
-            ).annotate(items_count=Count("items"))
+            ).annotate(items_count=Count("order_items"))
 
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)

@@ -46,7 +46,8 @@ class AnalyticsViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Warehouse managers can only see their warehouse analytics
         if user.role == "WAREHOUSE_MANAGER":
-            return queryset.filter(ref_type="warehouse", ref_id=user.warehouse_id)
+            warehouse_id = user.warehouses.first().id if user.warehouses.exists() else None
+            return queryset.filter(ref_type="warehouse", ref_id=warehouse_id) if warehouse_id else queryset.none()
 
         # Riders can only see their own analytics
         if user.role == "RIDER":
@@ -135,7 +136,12 @@ class AnalyticsViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Warehouse managers can only see their own warehouse
         if user.role == "WAREHOUSE_MANAGER":
-            warehouse_id = user.warehouse_id
+            warehouse_id = user.warehouses.first().id if user.warehouses.exists() else None
+            if not warehouse_id:
+                return Response(
+                    {"error": "User does not have an assigned warehouse"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         elif not warehouse_id:
             return Response(
                 {"error": "warehouse_id is required"},

@@ -43,7 +43,10 @@ class RedisService:
                         port=redis_port,
                         password=redis_password,
                         ssl=True,
-                        ssl_cert_reqs=None,
+                        ssl_certfile=None,
+                        ssl_keyfile=None,
+                        ssl_ca_certs=None,
+                        ssl_check_hostname=False,
                         decode_responses=True
                     )
                 else:

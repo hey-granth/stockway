@@ -56,6 +56,7 @@ dependencies = [
     "pyjwt==2.10.1",
     "pytest==9.0.1",
     "pytest-django==4.11.1",
+    "pytest-html>=4.2.0",
     "python-dateutil==2.9.0.post0",
     "python-dotenv==1.2.1",
     "realtime==2.24.0",
@@ -79,4 +80,9 @@ dependencies = [
     "wcwidth==0.2.14",
     "websockets==15.0.1",
     "yarl==1.22.0",
+]
+
+[dependency-groups]
+dev = [
+    "locust>=2.44.1",
 ]

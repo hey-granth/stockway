@@ -247,8 +247,8 @@ class ShopkeeperPaymentListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Payment.objects.filter(
-            payer=self.request.user, payment_type="shopkeeper_to_warehouse"
-        ).select_related("order", "warehouse")
+            payer=self.request.user
+        ).select_related("order")
 
         # Filter by status
         status_filter = self.request.query_params.get("status")
@@ -277,7 +277,7 @@ class ShopkeeperPaymentSummaryView(APIView):
 
     def get(self, request):
         payments = Payment.objects.filter(
-            payer=request.user, payment_type="shopkeeper_to_warehouse"
+            payer=request.user
         )
 
         summary = payments.aggregate(

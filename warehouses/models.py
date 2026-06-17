@@ -2,7 +2,22 @@ from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from django.core.validators import MinValueValidator
 from django.db import models as django_models
+from django.utils import timezone
 from decimal import Decimal
+
+
+class WarehouseManager(django_models.Manager):
+    """Default manager — excludes soft-deleted warehouses."""
+
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
+
+
+class AllObjectsManager(django_models.Manager):
+    """Manager that returns ALL warehouses including soft-deleted ones."""
+
+    def get_queryset(self):
+        return super().get_queryset()
 
 
 class Warehouse(models.Model):
@@ -19,8 +34,13 @@ class Warehouse(models.Model):
     )  # PostGIS Point field
     is_active = django_models.BooleanField(default=True)
     is_approved = django_models.BooleanField(default=False)
+    deleted_at = django_models.DateTimeField(null=True, blank=True)
     created_at = django_models.DateTimeField(auto_now_add=True)
     updated_at = django_models.DateTimeField(auto_now=True)
+
+    # Managers
+    objects = WarehouseManager()
+    all_objects = AllObjectsManager()
 
     class Meta:
         db_table = "warehouses"
@@ -32,6 +52,12 @@ class Warehouse(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.admin.email}"
+
+    def soft_delete(self):
+        """Mark the warehouse as deleted without removing the row."""
+        self.deleted_at = timezone.now()
+        self.is_active = False
+        self.save(update_fields=["deleted_at", "is_active", "updated_at"])
 
     @property
     def latitude(self):
