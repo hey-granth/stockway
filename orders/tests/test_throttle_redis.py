@@ -17,20 +17,21 @@ TEST_CACHES = {
         "LOCATION": TEST_REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
+        },
     }
 }
 
+
 @override_settings(
     CACHES=TEST_CACHES,
-    DEFAULT_THROTTLE_CLASSES=["core.throttling.OrderCreationThrottle"]
+    DEFAULT_THROTTLE_CLASSES=["core.throttling.OrderCreationThrottle"],
 )
 class RedisThrottleIntegrationTests(TestCase):
     def setUp(self):
         # Flush the test Redis DB
         self.redis_client = redis.from_url(TEST_REDIS_URL)
         self.redis_client.flushdb()
-        
+
         self.shopkeeper = User.objects.create_user(
             email="throttle_test@example.com", role="SHOPKEEPER"
         )
@@ -61,7 +62,10 @@ class RedisThrottleIntegrationTests(TestCase):
 
         # Mock time to advance 61 seconds
         future_time = time.time() + 61
-        with patch("rest_framework.throttling.SimpleRateThrottle.timer", return_value=future_time):
+        with patch(
+            "rest_framework.throttling.SimpleRateThrottle.timer",
+            return_value=future_time,
+        ):
             # Now the request should be allowed again
             response = self.client.post(self.url, {}, format="json")
             self.assertNotEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)

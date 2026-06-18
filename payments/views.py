@@ -14,7 +14,6 @@ from .serializers import (
 )
 from orders.models import Order
 from delivery.models import Delivery
-from accounts.models import User
 import logging
 
 logger = logging.getLogger(__name__)
@@ -213,9 +212,6 @@ def process_payouts(request):
                 if hasattr(delivery, "pickup_location") and hasattr(
                     delivery, "delivery_location"
                 ):
-                    from django.contrib.gis.measure import Distance
-                    from django.contrib.gis.geos import Point
-
                     if delivery.pickup_location and delivery.delivery_location:
                         distance = (
                             delivery.pickup_location.distance(
@@ -309,9 +305,28 @@ def list_payouts(request):
     if payout_status:
         payouts = payouts.filter(status=payout_status)
 
-    # Select related to optimize queries
-    payouts = payouts.select_related("rider", "warehouse").order_by("-created_at")
+    # Select related to optimize queries and scope fields
+    payouts = (
+        payouts.select_related("rider", "warehouse")
+        .only(
+            "id",
+            "total_distance",
+            "rate_per_km",
+            "computed_amount",
+            "status",
+            "created_at",
+            "rider__id",
+            "warehouse__id",
+        )
+        .order_by("-created_at")
+    )
 
-    serializer = PayoutSerializer(payouts, many=True)
+    from rest_framework.pagination import PageNumberPagination
 
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    paginator = PageNumberPagination()
+    paginator.page_size = 20
+    paginated_payouts = paginator.paginate_queryset(payouts, request)
+
+    serializer = PayoutSerializer(paginated_payouts, many=True)
+
+    return paginator.get_paginated_response(serializer.data)

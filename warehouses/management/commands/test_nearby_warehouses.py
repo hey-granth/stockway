@@ -8,7 +8,6 @@ from django.contrib.gis.db.models.functions import Distance as DistanceFunc
 from django.contrib.gis.measure import Distance
 from django.db import connection
 from warehouses.models import Warehouse
-from accounts.models import User
 
 
 class Command(BaseCommand):
@@ -119,7 +118,7 @@ class Command(BaseCommand):
 
     def test_nearby_query(self, lat, lon, radius):
         """Test nearby warehouse query"""
-        self.stdout.write(self.style.WARNING(f"\nTesting nearby warehouse query..."))
+        self.stdout.write(self.style.WARNING("\nTesting nearby warehouse query..."))
         self.stdout.write(f"  Location: ({lat}, {lon})")
         self.stdout.write(f"  Radius: {radius} km")
 
@@ -143,7 +142,7 @@ class Command(BaseCommand):
 
         if count > 0:
             nearest = nearby_warehouses.first()
-            self.stdout.write(self.style.SUCCESS(f"\n  ✓ Nearest warehouse:"))
+            self.stdout.write(self.style.SUCCESS("\n  ✓ Nearest warehouse:"))
             self.stdout.write(f"    ID: {nearest.id}")
             self.stdout.write(f"    Name: {nearest.name}")
             self.stdout.write(f"    Address: {nearest.address}")
@@ -151,7 +150,7 @@ class Command(BaseCommand):
 
             # Show top 3
             if count > 1:
-                self.stdout.write(f"\n  Other nearby warehouses:")
+                self.stdout.write("\n  Other nearby warehouses:")
                 for warehouse in nearby_warehouses[1:4]:
                     self.stdout.write(
                         f"    - {warehouse.name} ({warehouse.distance.km:.2f} km)"
@@ -204,7 +203,7 @@ class Command(BaseCommand):
         min_time = min(times)
         max_time = max(times)
 
-        self.stdout.write(f"\n  Performance metrics:")
+        self.stdout.write("\n  Performance metrics:")
         self.stdout.write(f"    Average query time: {avg_time:.2f} ms")
         self.stdout.write(f"    Min query time: {min_time:.2f} ms")
         self.stdout.write(f"    Max query time: {max_time:.2f} ms")
@@ -215,5 +214,5 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("  ✓ Good performance (< 200ms)"))
         else:
             self.stdout.write(
-                self.style.WARNING(f"  ⚠ Performance could be improved (> 200ms)")
+                self.style.WARNING("  ⚠ Performance could be improved (> 200ms)")
             )

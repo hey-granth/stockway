@@ -2,7 +2,6 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Point
 from rest_framework.test import APITestCase, APIClient
-from rest_framework import status
 from decimal import Decimal
 from riders.models import Rider, RiderNotification
 from warehouses.models import Warehouse

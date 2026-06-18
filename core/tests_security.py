@@ -7,13 +7,10 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 from decimal import Decimal
-from unittest.mock import patch, MagicMock
-import jwt
-from datetime import datetime, timedelta
+from unittest.mock import patch
 
 from core.validators import GeoValidator, NumericValidator, IDValidator, StringValidator
 from core.order_state import OrderStateManager
-from orders.models import Order, OrderItem
 from warehouses.models import Warehouse
 from inventory.models import Item
 
@@ -97,7 +94,7 @@ class PermissionBoundaryTests(APITestCase):
             supabase_uid="other-uid",
             role="WAREHOUSE_MANAGER",
         )
-        other_warehouse = Warehouse.objects.create(
+        Warehouse.objects.create(
             admin=other_admin,
             name="Other Warehouse",
             address="456 Other St",
@@ -278,7 +275,7 @@ class ConcurrentOrderCreationTests(TransactionTestCase):
         from django.db import connection
         from django.test.utils import CaptureQueriesContext
 
-        with CaptureQueriesContext(connection) as queries:
+        with CaptureQueriesContext(connection):
             # Simulate order creation
             pass
 
@@ -297,11 +294,11 @@ class GeoCacheTests(TestCase):
 
         # First call - cache miss
         mock_cache.get.return_value = None
-        result1 = find_nearby_warehouses_cached(40.7128, -74.0060, 10)
+        find_nearby_warehouses_cached(40.7128, -74.0060, 10)
         mock_cache.set.assert_called_once()
 
         # Second call - cache hit
         mock_cache.get.return_value = []
-        result2 = find_nearby_warehouses_cached(40.7128, -74.0060, 10)
+        find_nearby_warehouses_cached(40.7128, -74.0060, 10)
         # Should not call set again
         self.assertEqual(mock_cache.set.call_count, 1)

@@ -5,7 +5,7 @@ Rider services for Redis caching, location tracking, and analytics
 import redis
 import json
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.contrib.gis.geos import Point
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
@@ -32,6 +32,7 @@ class RedisService:
             if upstash_url and upstash_token:
                 # Production: Use Upstash Redis with SSL
                 import re
+
                 match = re.search(r"https://([^:]+):?(\d+)?", upstash_url)
                 if match:
                     redis_host = match.group(1)
@@ -47,7 +48,7 @@ class RedisService:
                         ssl_keyfile=None,
                         ssl_ca_certs=None,
                         ssl_check_hostname=False,
-                        decode_responses=True
+                        decode_responses=True,
                     )
                 else:
                     raise ValueError("Invalid Upstash Redis URL format")
@@ -58,7 +59,7 @@ class RedisService:
                     port=redis_port,
                     db=redis_db,
                     password=redis_password,
-                    decode_responses=True
+                    decode_responses=True,
                 )
 
             self.redis_client.ping()
@@ -111,7 +112,7 @@ class RedisService:
             return []
 
         try:
-            pattern = f"rider:location:*"
+            pattern = "rider:location:*"
             active_riders = []
 
             for key in self.redis_client.scan_iter(pattern):
@@ -177,8 +178,6 @@ class LocationTrackingService:
         """
         Calculate distance between two points in kilometers using PostGIS
         """
-        from django.contrib.gis.geos import Point
-        from django.contrib.gis.measure import D
 
         if not point1 or not point2:
             return None
@@ -250,7 +249,7 @@ class LocationTrackingService:
         rider.save()
 
         # Create history entry
-        history = RiderLocationHistory.objects.create(
+        RiderLocationHistory.objects.create(
             rider=rider,
             location=new_location,
             speed_kmh=speed_kmh,
@@ -348,7 +347,6 @@ class PerformanceMetricsService:
         """
         Calculate comprehensive performance metrics for a rider
         """
-        from orders.models import Order
         from delivery.models import Delivery
 
         deliveries = Delivery.objects.filter(rider=rider.user)

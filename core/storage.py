@@ -163,7 +163,7 @@ class SecureStorageService:
             file_content = file_obj.read()
 
             # Upload file
-            response = client.storage.from_(bucket).upload(file_path, file_content)
+            client.storage.from_(bucket).upload(file_path, file_content)
 
             return True, "File uploaded successfully"
         except Exception as e:
@@ -185,7 +185,7 @@ class SecureStorageService:
         try:
             client = cls.get_client()
 
-            response = client.storage.from_(bucket).remove([file_path])
+            client.storage.from_(bucket).remove([file_path])
 
             return True, "File deleted successfully"
         except Exception as e:

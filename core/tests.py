@@ -1,8 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIRequestFactory
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from core.permissions import (
     IsSuperAdmin,
     IsShopkeeper,
@@ -114,7 +112,7 @@ class IsShopkeeperPermissionTests(TestCase):
             self.permission.has_object_permission(request, None, other_order)
         )
 
-    def test_shopkeeper_cannot_access_other_order(self):
+    def test_other_shopkeeper_cannot_access_own_order(self):
         """Test shopkeeper cannot access another shopkeeper's order"""
         other_shopkeeper = User.objects.create_user(
             email="other@example.com", role="SHOPKEEPER"
@@ -275,7 +273,6 @@ class PermissionRoleTests(TestCase):
 
     def test_pending_user_has_no_role_permissions(self):
         """Test that PENDING role users have restricted access"""
-        from django.contrib.auth.models import AnonymousUser
 
         pending_user = User.objects.create_user(
             email="pending@example.com", role="PENDING"
@@ -307,7 +304,7 @@ class InactiveUserPermissionTests(TestCase):
         self.user.is_active = False
         self.user.save()
 
-        permission = IsShopkeeper()
+        IsShopkeeper()
         request = self.factory.get("/")
         request.user = self.user
         # In production, inactive users fail at authentication level

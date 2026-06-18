@@ -1,9 +1,7 @@
 from django.contrib.gis.db.models.functions import Distance
 from django.core.cache import cache
-from django.db.models import Q
 from riders.models import Rider
 from core.validators import GeoValidator
-import hashlib
 import logging
 
 logger = logging.getLogger(__name__)
@@ -155,15 +153,17 @@ def find_nearby_warehouses_cached(latitude, longitude, radius_km=10):
     # Query database
     try:
         point = Point(longitude, latitude, srid=4326)
+        from django.contrib.gis.measure import D
+
         radius_m = radius_km * 1000
 
         warehouses = list(
             Warehouse.objects.filter(
-                location__isnull=False, is_active=True, is_approved=True
-            )
-            .annotate(distance=Distance("location", point))
-            .filter(distance__lte=radius_m)
-            .order_by("distance")[:20]  # Limit results
+                is_active=True,
+                is_approved=True,
+                location__isnull=False,
+                location__distance_lte=(point, D(m=radius_m)),
+            ).only("id", "name", "address", "location")
         )
 
         # Cache for 5 minutes
@@ -197,4 +197,4 @@ def _generate_geo_cache_key(latitude, longitude, radius_km):
         key_string = f"geo:warehouses:{lat_rounded}:{lon_rounded}:{radius_rounded}"
         return key_string
     except Exception:
-        return RiderProfile.objects.none()
+        return f"geo:warehouses:{latitude}:{longitude}:{radius_km}"

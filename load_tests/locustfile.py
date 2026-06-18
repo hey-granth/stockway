@@ -49,6 +49,7 @@ class ShopkeeperUser(HttpUser):
     Simulates a logged-in shopkeeper.
     Traffic mix: heavy reads (browse/orders/notifications), light writes (order creation).
     """
+
     weight = cfg.SHOPKEEPER_WEIGHT
     wait_time = between(cfg.MIN_WAIT, cfg.MAX_WAIT)
     tasks = {
@@ -107,6 +108,7 @@ class WarehouseManagerUser(HttpUser):
     """
     Simulates a warehouse manager: managing orders, inventory, riders, analytics.
     """
+
     weight = cfg.WAREHOUSE_WEIGHT
     wait_time = between(cfg.MIN_WAIT, cfg.MAX_WAIT)
     tasks = {
@@ -151,6 +153,7 @@ class RiderUser(HttpUser):
     """
     Simulates an active rider: high-frequency location pings + order status updates.
     """
+
     weight = cfg.RIDER_WEIGHT
     wait_time = between(cfg.MIN_WAIT, cfg.MAX_WAIT)
     tasks = {RiderTaskSet: 1}
@@ -171,6 +174,7 @@ class AdminUser(HttpUser):
     Simulates an admin/super-admin user: user management, analytics, payout oversight.
     Very low spawn weight – admins are rare in production.
     """
+
     weight = cfg.ADMIN_WEIGHT
     wait_time = between(cfg.MIN_WAIT, cfg.MAX_WAIT)
     tasks = {AdminTaskSet: 1}

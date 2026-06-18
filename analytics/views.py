@@ -11,9 +11,6 @@ import logging
 from .models import AnalyticsSummary
 from .serializers import (
     AnalyticsSummarySerializer,
-    SystemAnalyticsSerializer,
-    WarehouseAnalyticsSerializer,
-    RiderAnalyticsSerializer,
 )
 from .tasks import (
     compute_system_analytics,
@@ -46,8 +43,14 @@ class AnalyticsViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Warehouse managers can only see their warehouse analytics
         if user.role == "WAREHOUSE_MANAGER":
-            warehouse_id = user.warehouses.first().id if user.warehouses.exists() else None
-            return queryset.filter(ref_type="warehouse", ref_id=warehouse_id) if warehouse_id else queryset.none()
+            warehouse_id = (
+                user.warehouses.first().id if user.warehouses.exists() else None
+            )
+            return (
+                queryset.filter(ref_type="warehouse", ref_id=warehouse_id)
+                if warehouse_id
+                else queryset.none()
+            )
 
         # Riders can only see their own analytics
         if user.role == "RIDER":
@@ -136,7 +139,9 @@ class AnalyticsViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Warehouse managers can only see their own warehouse
         if user.role == "WAREHOUSE_MANAGER":
-            warehouse_id = user.warehouses.first().id if user.warehouses.exists() else None
+            warehouse_id = (
+                user.warehouses.first().id if user.warehouses.exists() else None
+            )
             if not warehouse_id:
                 return Response(
                     {"error": "User does not have an assigned warehouse"},

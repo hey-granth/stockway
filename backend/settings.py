@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
+import sys
 from pathlib import Path
 from core.config import Config
 
@@ -34,6 +36,7 @@ if not DEBUG:
     if Config.RENDER_EXTERNAL_URL:
         # Extract hostname from Render URL (e.g., https://app.onrender.com -> app.onrender.com)
         import re
+
         match = re.search(r"https?://([^/]+)", Config.RENDER_EXTERNAL_URL)
         if match:
             ALLOWED_HOSTS.append(match.group(1))
@@ -128,6 +131,13 @@ DATABASES = {
         },
     }
 }
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+]
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -167,9 +177,6 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
-
-# Detect if running tests
-import sys
 
 TESTING = "test" in sys.argv
 
@@ -224,7 +231,11 @@ CACHES = (
             "LOCATION": Config.get_redis_url(),
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
-                **({"CONNECTION_POOL_KWARGS": {"ssl_cert_reqs": None}} if Config.get_redis_url().startswith("rediss://") else {})
+                **(
+                    {"CONNECTION_POOL_KWARGS": {"ssl_cert_reqs": None}}
+                    if Config.get_redis_url().startswith("rediss://")
+                    else {}
+                ),
             },
         }
     }
@@ -486,8 +497,6 @@ LOGGING = {
 }
 
 # Create logs directory if it doesn't exist
-import os
-
 os.makedirs(BASE_DIR / "logs", exist_ok=True)
 
 DISABLE_COLLECTSTATIC = True

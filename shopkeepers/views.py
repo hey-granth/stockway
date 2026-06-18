@@ -246,9 +246,9 @@ class ShopkeeperPaymentListView(generics.ListAPIView):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        queryset = Payment.objects.filter(
-            payer=self.request.user
-        ).select_related("order")
+        queryset = Payment.objects.filter(payer=self.request.user).select_related(
+            "order"
+        )
 
         # Filter by status
         status_filter = self.request.query_params.get("status")
@@ -276,9 +276,7 @@ class ShopkeeperPaymentSummaryView(APIView):
     permission_classes = [IsAuthenticated, IsShopkeeper]
 
     def get(self, request):
-        payments = Payment.objects.filter(
-            payer=request.user
-        )
+        payments = Payment.objects.filter(payer=request.user)
 
         summary = payments.aggregate(
             total_paid=Sum("amount", filter=Q(status="completed")) or Decimal("0.00"),

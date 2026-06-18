@@ -1,7 +1,5 @@
 from rest_framework import serializers
 from .models import Warehouse, WarehouseNotification, RiderPayout
-from orders.models import Order, OrderItem
-from delivery.models import Delivery
 
 
 class WarehouseSerializer(serializers.ModelSerializer):

@@ -29,6 +29,11 @@ class Notification(models.Model):
         indexes = [
             models.Index(fields=["user", "created_at"]),
             models.Index(fields=["user", "is_read"]),
+            models.Index(
+                fields=["is_read"],
+                name="notify_unread_idx",
+                condition=models.Q(is_read=False),
+            ),
         ]
 
     def __str__(self):

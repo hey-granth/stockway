@@ -206,31 +206,53 @@ class SupabaseService:
             from django.conf import settings
             from django.contrib.auth import get_user_model
             from collections import namedtuple
+
             User = get_user_model()
             user = User.objects.filter(email=email).first()
             if not user:
                 raise Exception("Test user not found")
-                
+
             if not user.supabase_uid:
                 user.supabase_uid = str(user.id)
                 user.save(update_fields=["supabase_uid"])
-                
-            token = jwt.encode({
-                "sub": str(user.supabase_uid),
-                "email": email,
-                "role": "authenticated",
-                "iss": f"{settings.SUPABASE_URL}/auth/v1" if settings.SUPABASE_URL else None,
-                "exp": int(time.time()) + 3600,
-                "token_type": "bearer"
-            }, settings.SUPABASE_JWT_SECRET, algorithm="HS256")
-            
-            UserResponse = namedtuple('UserResponse', ['id'])
-            SessionResponse = namedtuple('SessionResponse', ['access_token', 'refresh_token', 'expires_in', 'expires_at', 'token_type'])
-            ResponseObj = namedtuple('ResponseObj', ['user', 'session'])
-            
+
+            token = jwt.encode(
+                {
+                    "sub": str(user.supabase_uid),
+                    "email": email,
+                    "role": "authenticated",
+                    "iss": f"{settings.SUPABASE_URL}/auth/v1"
+                    if settings.SUPABASE_URL
+                    else None,
+                    "exp": int(time.time()) + 3600,
+                    "token_type": "bearer",
+                },
+                settings.SUPABASE_JWT_SECRET,
+                algorithm="HS256",
+            )
+
+            UserResponse = namedtuple("UserResponse", ["id"])
+            SessionResponse = namedtuple(
+                "SessionResponse",
+                [
+                    "access_token",
+                    "refresh_token",
+                    "expires_in",
+                    "expires_at",
+                    "token_type",
+                ],
+            )
+            ResponseObj = namedtuple("ResponseObj", ["user", "session"])
+
             return ResponseObj(
                 user=UserResponse(id=str(user.supabase_uid)),
-                session=SessionResponse(access_token=token, refresh_token="mock", expires_in=3600, expires_at=int(time.time())+3600, token_type="bearer")
+                session=SessionResponse(
+                    access_token=token,
+                    refresh_token="mock",
+                    expires_in=3600,
+                    expires_at=int(time.time()) + 3600,
+                    token_type="bearer",
+                ),
             )
 
         try:

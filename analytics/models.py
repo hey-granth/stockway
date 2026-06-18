@@ -1,7 +1,5 @@
 # analytics/models.py
 from django.db import models
-from django.core.validators import MinValueValidator
-from django.utils import timezone
 
 
 class AnalyticsSummary(models.Model):

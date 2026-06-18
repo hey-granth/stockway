@@ -5,7 +5,6 @@ from django.db import transaction
 from .models import Order, OrderItem
 from inventory.models import Item
 from warehouses.models import Warehouse
-from accounts.models import User
 from core.validators import NumericValidator, IDValidator, StringValidator
 import logging
 
@@ -131,7 +130,7 @@ class OrderCreateSerializer(serializers.Serializer):
         """Create order with items and update inventory with proper locking"""
         warehouse_id = validated_data["warehouse_id"]
         items_data = validated_data["items"]
-        items_objects = validated_data["_items_objects"]
+        validated_data["_items_objects"]
         user = self.context["request"].user
 
         with transaction.atomic():
@@ -224,7 +223,7 @@ class OrderCreateSerializer(serializers.Serializer):
 
             # Log order creation
             logger.info(
-                f"Order created",
+                "Order created",
                 extra={
                     "order_id": order.id,
                     "user_id": user.id,

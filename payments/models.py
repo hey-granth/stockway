@@ -109,7 +109,10 @@ class Payout(models.Model):
         null=True, blank=True, help_text="Total distance in kilometers"
     )
     rate_per_km: Decimal = models.DecimalField(
-        max_digits=6, decimal_places=2, null=True, blank=True,
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
         help_text="Rate per kilometer",
     )
     computed_amount: Decimal = models.DecimalField(

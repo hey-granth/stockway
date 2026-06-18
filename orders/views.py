@@ -12,7 +12,7 @@ from .serializers import (
     OrderAssignmentSerializer,
 )
 from delivery.models import Delivery
-from core.permissions import IsShopkeeper, IsWarehouseAdmin, IsRider
+from core.permissions import IsShopkeeper, IsWarehouseAdmin
 from core.throttling import OrderCreationThrottle
 from core.order_state import OrderStateManager
 from core.validators import IDValidator, StringValidator
@@ -204,7 +204,7 @@ class OrderAcceptView(APIView):
 
             if not can_transition:
                 logger.warning(
-                    f"Invalid state transition attempt",
+                    "Invalid state transition attempt",
                     extra={
                         "order_id": order.id,
                         "user_id": request.user.id,

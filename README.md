@@ -59,10 +59,10 @@ To run the platform locally:
 
 A 60-second headless Locust load test was performed simulating realistic traffic mix (Shopkeepers, Warehouse Managers, Riders, and Admins). The test yielded the following results with **0% error rate**:
 
-*   **Total Requests**: 530
-*   **Requests Per Second**: ~9.01 RPS
-*   **Average Response Time**: 100 ms
-*   **Median Response Time**: 74 ms
+*   **Total Requests**: 533
+*   **Requests Per Second**: ~8.93 RPS
+*   **Average Response Time**: 90 ms
+*   **Median Response Time**: 75 ms
 *   **95th Percentile Response Time**: 140 ms
 
 The system successfully handled concurrency and routing without degradation.

@@ -209,11 +209,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         # Check for rider profile
         if hasattr(self, "rider_profile"):
             try:
-                from riders.models import RiderProfile
-
                 if self.rider_profile:
                     dependencies["rider_profile"] = 1
-            except:
+            except Exception:
                 pass
 
         return (len(dependencies) > 0, dependencies)

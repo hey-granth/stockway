@@ -1,4 +1,4 @@
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Point
 from rest_framework.test import APITestCase, APIClient
@@ -428,7 +428,7 @@ class SignInViewTests(APITestCase):
     @patch("accounts.views.SupabaseService.sign_in")
     def test_signin_existing_user(self, mock_sign_in):
         """Test sign in with existing user"""
-        existing_user = User.objects.create_user(
+        User.objects.create_user(
             email="existing@example.com", supabase_uid="existing-uid", role="SHOPKEEPER"
         )
 

@@ -101,7 +101,7 @@ def custom_exception_handler(exc, context):
 
     # Log the exception
     request = context.get("request")
-    view = context.get("view")
+    context.get("view")
 
     log_data = {
         "exception_type": type(exc).__name__,

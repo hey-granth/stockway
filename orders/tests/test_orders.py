@@ -6,8 +6,6 @@ from decimal import Decimal
 from orders.models import Order, OrderItem
 from warehouses.models import Warehouse
 from inventory.models import Item
-from delivery.models import Delivery
-from django.contrib.gis.geos import Point
 from unittest.mock import patch
 
 User = get_user_model()

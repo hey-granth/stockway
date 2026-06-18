@@ -1,7 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase, APIClient
-from rest_framework import status
 from decimal import Decimal
 from delivery.models import Delivery
 from orders.models import Order
@@ -75,7 +74,7 @@ class DeliveryModelTests(TestCase):
 
     def test_delivery_one_to_one_with_order(self):
         """Test delivery has one-to-one relationship with order"""
-        delivery1 = Delivery.objects.create(order=self.order, rider=self.rider)
+        Delivery.objects.create(order=self.order, rider=self.rider)
         # Creating another delivery for same order should fail
         with self.assertRaises(Exception):
             Delivery.objects.create(order=self.order, rider=self.rider)
@@ -360,7 +359,7 @@ class DeliveryOrderRelationshipTests(TestCase):
             warehouse=self.warehouse,
             total_amount=Decimal("100.00"),
         )
-        delivery1 = Delivery.objects.create(order=order, rider=self.rider)
+        Delivery.objects.create(order=order, rider=self.rider)
 
         # Creating another delivery for same order should fail
         with self.assertRaises(Exception):

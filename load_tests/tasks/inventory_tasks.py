@@ -44,9 +44,7 @@ class InventoryReadTasks(TaskSet):
             if resp.status_code == 200:
                 resp.success()
             else:
-                resp.failure(
-                    f"list items → HTTP {resp.status_code}: {resp.text[:200]}"
-                )
+                resp.failure(f"list items → HTTP {resp.status_code}: {resp.text[:200]}")
 
     @task(5)
     def get_item_detail(self):

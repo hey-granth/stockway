@@ -5,37 +5,67 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('orders', '0002_initial'),
-        ('payments', '0002_initial'),
-        ('warehouses', '0001_initial'),
+        ("orders", "0002_initial"),
+        ("payments", "0002_initial"),
+        ("warehouses", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='payout',
-            name='order',
-            field=models.ForeignKey(blank=True, help_text='Order this payout is associated with', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='payouts', to='orders.order'),
+            model_name="payout",
+            name="order",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Order this payout is associated with",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="payouts",
+                to="orders.order",
+            ),
         ),
         migrations.AlterField(
-            model_name='payout',
-            name='rate_per_km',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Rate per kilometer', max_digits=6, null=True),
+            model_name="payout",
+            name="rate_per_km",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="Rate per kilometer",
+                max_digits=6,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='payout',
-            name='status',
-            field=models.CharField(choices=[('pending', 'Pending'), ('processed', 'Processed'), ('paid', 'Paid'), ('settled', 'Settled')], default='pending', max_length=20),
+            model_name="payout",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("pending", "Pending"),
+                    ("processed", "Processed"),
+                    ("paid", "Paid"),
+                    ("settled", "Settled"),
+                ],
+                default="pending",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='payout',
-            name='total_distance',
-            field=models.FloatField(blank=True, help_text='Total distance in kilometers', null=True),
+            model_name="payout",
+            name="total_distance",
+            field=models.FloatField(
+                blank=True, help_text="Total distance in kilometers", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='payout',
-            name='warehouse',
-            field=models.ForeignKey(blank=True, help_text='Warehouse processing the payout', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='payouts', to='warehouses.warehouse'),
+            model_name="payout",
+            name="warehouse",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Warehouse processing the payout",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="payouts",
+                to="warehouses.warehouse",
+            ),
         ),
     ]

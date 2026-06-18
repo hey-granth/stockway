@@ -4,7 +4,6 @@ Order state management and validation for secure state transitions
 
 from typing import Dict, Set, Optional
 import logging
-from core.exceptions import InvalidStateTransitionError
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +153,7 @@ class OrderStateManager:
             reason: Optional reason for transition
         """
         logger.info(
-            f"Order state transition",
+            "Order state transition",
             extra={
                 "order_id": order_id,
                 "user_id": user_id,

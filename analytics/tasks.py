@@ -347,7 +347,7 @@ def update_realtime_metrics(ref_type, ref_id=None):
     Update real-time metrics for dashboards.
     Stores results in cache for fast retrieval.
     """
-    today = timezone.now().date()
+    timezone.now().date()
     cache_key = f"analytics:{ref_type}:{ref_id or 'system'}:realtime"
 
     if ref_type == "system":

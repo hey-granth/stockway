@@ -131,7 +131,6 @@ def nightly_payout_rollup(self):
         dict: Task result with aggregated stats
     """
     from payments.models import Payout
-    from warehouses.models import Warehouse
     from django.db.models import Sum, Count
 
     try:

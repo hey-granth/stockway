@@ -87,9 +87,7 @@ class ShopkeeperOrderTasks(TaskSet):
         item_id = getattr(self.user, "sample_item_id", DEFAULT_ITEM_ID)
         payload = {
             "warehouse_id": wid,
-            "items": [
-                {"item_id": item_id, "quantity": random.randint(1, 3)}
-            ],
+            "items": [{"item_id": item_id, "quantity": random.randint(1, 3)}],
             "notes": "Load test order",
         }
         with self.client.post(
@@ -147,8 +145,7 @@ class WarehouseOrderTasks(TaskSet):
             if resp.status_code == 200:
                 results = resp.json()
                 items = (
-                    results if isinstance(results, list)
-                    else results.get("results", [])
+                    results if isinstance(results, list) else results.get("results", [])
                 )
                 if items:
                     self.user.sample_order_id = items[0].get("id", 1)
@@ -222,7 +219,9 @@ class WarehouseOrderTasks(TaskSet):
             return
         with self.client.post(
             f"/api/orders/warehouse/orders/{order_id}/reject/",
-            json={"rejection_reason": "Load test – automated rejection for testing purposes"},
+            json={
+                "rejection_reason": "Load test – automated rejection for testing purposes"
+            },
             catch_response=True,
             name="ORDERS | WH POST reject order",
         ) as resp:

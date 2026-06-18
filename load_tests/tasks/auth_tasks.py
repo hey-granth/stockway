@@ -38,9 +38,7 @@ def do_login(user_client, email: str, password: str) -> str | None:
             resp.success()
             return token
         else:
-            resp.failure(
-                f"signin failed: HTTP {resp.status_code} – {resp.text[:200]}"
-            )
+            resp.failure(f"signin failed: HTTP {resp.status_code} – {resp.text[:200]}")
             return None
 
 

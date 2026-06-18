@@ -5,11 +5,9 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from django.db import transaction
-from django.db.models import Q, F
-from django.utils import timezone
 from django.http import HttpResponse
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 import csv
 import io
@@ -21,13 +19,8 @@ from .serializers import (
     RiderProfileSerializer,
     RiderLocationUpdateSerializer,
     RiderListSerializer,
-    RiderEarningsSerializer,
-    RiderHistorySerializer,
-    RiderPerformanceSerializer,
     RiderNotificationSerializer,
     RiderAvailabilitySerializer,
-    ActiveRiderSerializer,
-    WarehouseRiderMetricsSerializer,
     RiderManagementSerializer,
 )
 from .services import (
@@ -271,8 +264,6 @@ class RiderOrderUpdateView(APIView):
             # Calculate distance if locations are available
             distance_km = Decimal("0.00")
             if rider.current_location and order.warehouse.location:
-                from django.contrib.gis.db.models.functions import Distance
-
                 # Calculate distance in meters and convert to km
                 distance_meters = rider.current_location.distance(
                     order.warehouse.location

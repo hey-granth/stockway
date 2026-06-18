@@ -51,9 +51,7 @@ class WarehouseManagementTasks(TaskSet):
                     self.user.warehouse_id = items[0].get("id", DEFAULT_WAREHOUSE_ID)
                 resp.success()
             else:
-                resp.failure(
-                    f"WH list → HTTP {resp.status_code}: {resp.text[:200]}"
-                )
+                resp.failure(f"WH list → HTTP {resp.status_code}: {resp.text[:200]}")
 
     @task(8)
     def get_warehouse_detail(self):
@@ -66,9 +64,7 @@ class WarehouseManagementTasks(TaskSet):
             if resp.status_code in (200, 404):
                 resp.success()
             else:
-                resp.failure(
-                    f"WH detail → HTTP {resp.status_code}: {resp.text[:200]}"
-                )
+                resp.failure(f"WH detail → HTTP {resp.status_code}: {resp.text[:200]}")
 
     @task(6)
     def get_warehouse_inventory(self):
@@ -96,9 +92,7 @@ class WarehouseManagementTasks(TaskSet):
             if resp.status_code in (200, 404):
                 resp.success()
             else:
-                resp.failure(
-                    f"WH orders → HTTP {resp.status_code}: {resp.text[:200]}"
-                )
+                resp.failure(f"WH orders → HTTP {resp.status_code}: {resp.text[:200]}")
 
     @task(4)
     def get_warehouse_notifications(self):
@@ -215,9 +209,7 @@ class WarehouseManagementTasks(TaskSet):
             if resp.status_code in (200, 400, 403, 404):
                 resp.success()
             else:
-                resp.failure(
-                    f"WH update → HTTP {resp.status_code}: {resp.text[:200]}"
-                )
+                resp.failure(f"WH update → HTTP {resp.status_code}: {resp.text[:200]}")
 
     @task(1)
     def mark_notifications_read(self):

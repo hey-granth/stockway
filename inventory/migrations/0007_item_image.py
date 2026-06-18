@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0006_alter_item_image_urls_nullable'),
+        ("inventory", "0006_alter_item_image_urls_nullable"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='item',
-            name='image',
+            model_name="item",
+            name="image",
             field=models.TextField(blank=True, null=True),
         ),
     ]

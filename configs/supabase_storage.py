@@ -78,7 +78,7 @@ class SupabaseStorage:
 
         try:
             # Upload file to bucket
-            response = client.storage.from_(bucket_name).upload(
+            client.storage.from_(bucket_name).upload(
                 path=file_path,
                 file=file_data,
                 file_options={
@@ -196,7 +196,7 @@ class SupabaseStorage:
         client = cls.get_client()
 
         try:
-            response = client.storage.from_(bucket_name).remove([file_path])
+            client.storage.from_(bucket_name).remove([file_path])
             return {"success": True, "path": file_path, "bucket": bucket_name}
         except Exception as e:
             return {"success": False, "error": str(e), "path": file_path}
@@ -241,9 +241,7 @@ class SupabaseStorage:
         client = cls.get_client()
 
         try:
-            response = client.storage.create_bucket(
-                bucket_name, options={"public": public}
-            )
+            client.storage.create_bucket(bucket_name, options={"public": public})
             return {"success": True, "bucket": bucket_name, "public": public}
         except Exception as e:
             return {"success": False, "error": str(e), "bucket": bucket_name}

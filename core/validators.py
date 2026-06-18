@@ -4,7 +4,6 @@ Input validation utilities for security hardening
 
 from typing import Tuple
 from decimal import Decimal, InvalidOperation
-from rest_framework import serializers
 import logging
 
 logger = logging.getLogger(__name__)

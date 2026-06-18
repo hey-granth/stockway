@@ -41,7 +41,7 @@ class PaymentInitiateSerializer(serializers.Serializer):
     def validate_order_id(self, value):
         """Ensure order exists."""
         try:
-            order = Order.objects.get(id=value)
+            Order.objects.get(id=value)
         except Order.DoesNotExist:
             raise serializers.ValidationError("Order not found.")
         return value
@@ -83,7 +83,7 @@ class PaymentConfirmSerializer(serializers.Serializer):
     def validate_payment_id(self, value):
         """Ensure payment exists."""
         try:
-            payment = Payment.objects.get(id=value)
+            Payment.objects.get(id=value)
         except Payment.DoesNotExist:
             raise serializers.ValidationError("Payment not found.")
         return value

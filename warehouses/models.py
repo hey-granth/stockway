@@ -30,7 +30,7 @@ class Warehouse(models.Model):
     address = django_models.TextField()
     contact_number = django_models.CharField(max_length=20)
     location = models.PointField(
-        geography=True, srid=4326, null=True, blank=True
+        geography=True, srid=4326, null=True, blank=True, spatial_index=True
     )  # PostGIS Point field
     is_active = django_models.BooleanField(default=True)
     is_approved = django_models.BooleanField(default=False)
