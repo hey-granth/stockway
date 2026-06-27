@@ -17,7 +17,7 @@ class IsSuperAdmin(permissions.BasePermission):
         has_perm = (
             request.user
             and request.user.is_authenticated
-            and (request.user.is_superuser or request.user.role == "ADMIN")
+            and request.user.role == "ADMIN"
         )
         if not has_perm:
             self._log_permission_denied(request, "IsSuperAdmin")
@@ -130,11 +130,11 @@ class IsWarehouseAdminOrSuperAdmin(permissions.BasePermission):
             request.user
             and request.user.is_authenticated
             and (
-                request.user.is_superuser
-                or request.user.role == "ADMIN"
+                request.user.role == "ADMIN"
                 or request.user.role == "WAREHOUSE_MANAGER"
             )
         )
+
         if not has_perm:
             self._log_permission_denied(request, "IsWarehouseAdminOrSuperAdmin")
         return has_perm

@@ -5,11 +5,15 @@ class IsWarehouseAdmin(permissions.BasePermission):
     """Permission for warehouse administrators"""
 
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.role in ["WAREHOUSE_MANAGER", "ADMIN"]
+        )
 
     def has_object_permission(self, request, view, obj):
         # Admin can access all warehouses
-        if request.user.role == "admin":
+        if request.user.role == "ADMIN":
             return True
 
         # Check if user is the warehouse admin
@@ -29,14 +33,18 @@ class IsWarehouseAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return request.user and request.user.is_authenticated
-        return request.user and request.user.is_authenticated
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.role in ["WAREHOUSE_MANAGER", "ADMIN"]
+        )
 
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
 
         # Admin can modify all warehouses
-        if request.user.role == "admin":
+        if request.user.role == "ADMIN":
             return True
 
         # Check if user is the warehouse admin
@@ -53,11 +61,15 @@ class IsWarehouseOrRider(permissions.BasePermission):
     """Permission for warehouse admin or assigned rider"""
 
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.role in ["WAREHOUSE_MANAGER", "RIDER", "ADMIN"]
+        )
 
     def has_object_permission(self, request, view, obj):
         # Admin can access all
-        if request.user.role == "admin":
+        if request.user.role == "ADMIN":
             return True
 
         # Warehouse admin can access their orders
@@ -69,3 +81,4 @@ class IsWarehouseOrRider(permissions.BasePermission):
             return True
 
         return False
+

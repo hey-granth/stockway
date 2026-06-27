@@ -9,7 +9,7 @@ class OrderItemDetailSerializer(serializers.Serializer):
     """Serializer for order items with item details."""
 
     id = serializers.IntegerField(read_only=True)
-    item = serializers.IntegerField(read_only=True)
+    item = serializers.IntegerField(source="item_id", read_only=True)
     item_name = serializers.CharField(read_only=True)
     quantity = serializers.IntegerField(read_only=True)
     price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
@@ -19,7 +19,7 @@ class OrderDetailSerializer(serializers.Serializer):
     """Detailed order serializer with all related information."""
 
     id = serializers.IntegerField(read_only=True)
-    warehouse = serializers.IntegerField(read_only=True)
+    warehouse = serializers.IntegerField(source="warehouse_id", read_only=True)
     warehouse_name = serializers.CharField(read_only=True)
     warehouse_address = serializers.CharField(read_only=True)
     status = serializers.CharField(read_only=True)

@@ -40,10 +40,11 @@ class ShopkeeperOrderTasks(TaskSet):
     @task(10)
     def list_my_orders(self):
         with self.client.get(
-            "/api/orders/shopkeeper/orders/",
+            "/api/shopkeeper/orders/",
             catch_response=True,
             name="ORDERS | SK GET orders list",
         ) as resp:
+
             if resp.status_code == 200:
                 # Cache a real order ID for the detail task
                 results = resp.json()
@@ -63,7 +64,7 @@ class ShopkeeperOrderTasks(TaskSet):
     def get_order_detail(self):
         order_id = getattr(self.user, "sample_order_id", 1)
         with self.client.get(
-            f"/api/orders/shopkeeper/orders/{order_id}/",
+            f"/api/shopkeeper/orders/{order_id}/",
             catch_response=True,
             name="ORDERS | SK GET order detail",
         ) as resp:
@@ -91,7 +92,7 @@ class ShopkeeperOrderTasks(TaskSet):
             "notes": "Load test order",
         }
         with self.client.post(
-            "/api/orders/shopkeeper/orders/create/",
+            "/api/shopkeeper/orders/create/",
             json=payload,
             catch_response=True,
             name="ORDERS | SK POST create order",
@@ -138,7 +139,7 @@ class WarehouseOrderTasks(TaskSet):
     @task(10)
     def list_warehouse_orders(self):
         with self.client.get(
-            "/api/orders/warehouse/orders/",
+            "/api/warehouse/orders/",
             catch_response=True,
             name="ORDERS | WH GET orders list",
         ) as resp:
@@ -158,7 +159,7 @@ class WarehouseOrderTasks(TaskSet):
     @task(7)
     def list_pending_orders(self):
         with self.client.get(
-            "/api/orders/warehouse/orders/pending/",
+            "/api/warehouse/orders/pending/",
             catch_response=True,
             name="ORDERS | WH GET pending orders",
         ) as resp:
@@ -177,7 +178,7 @@ class WarehouseOrderTasks(TaskSet):
     def get_order_detail(self):
         order_id = getattr(self.user, "sample_order_id", 1)
         with self.client.get(
-            f"/api/orders/warehouse/orders/{order_id}/",
+            f"/api/warehouse/orders/{order_id}/",
             catch_response=True,
             name="ORDERS | WH GET order detail",
         ) as resp:
@@ -195,7 +196,7 @@ class WarehouseOrderTasks(TaskSet):
         if not order_id:
             return  # Nothing to accept yet
         with self.client.post(
-            f"/api/orders/warehouse/orders/{order_id}/accept/",
+            f"/api/warehouse/orders/{order_id}/accept/",
             json={},
             catch_response=True,
             name="ORDERS | WH POST accept order",
@@ -218,7 +219,7 @@ class WarehouseOrderTasks(TaskSet):
         if not order_id:
             return
         with self.client.post(
-            f"/api/orders/warehouse/orders/{order_id}/reject/",
+            f"/api/warehouse/orders/{order_id}/reject/",
             json={
                 "rejection_reason": "Load test – automated rejection for testing purposes"
             },
@@ -243,7 +244,7 @@ class WarehouseOrderTasks(TaskSet):
         if not order_id or not rider_id:
             return
         with self.client.post(
-            "/api/orders/warehouse/orders/assign/",
+            "/api/warehouse/orders/assign/",
             json={"order_id": order_id, "rider_id": rider_id},
             catch_response=True,
             name="ORDERS | WH POST assign rider",

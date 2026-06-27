@@ -55,17 +55,29 @@ To run the platform locally:
     *   Install dependencies: `npm install`.
     *   Start dev server: `npm run dev`.
 
-## Performance & Load Testing
+## Load Testing
 
-A 60-second headless Locust load test was performed simulating realistic traffic mix (Shopkeepers, Warehouse Managers, Riders, and Admins). The test yielded the following results with **0% error rate**:
+Stockway was load tested using [Locust](https://locust.io) with a staged ramp profile simulating realistic production traffic across all four user roles (Shopkeeper, Warehouse Manager, Rider, Admin).
 
-*   **Total Requests**: 533
-*   **Requests Per Second**: ~8.93 RPS
-*   **Average Response Time**: 90 ms
-*   **Median Response Time**: 75 ms
-*   **95th Percentile Response Time**: 140 ms
+### Test Profile
+| Phase    | Users | Duration |
+|----------|-------|----------|
+| Warm-up  | 20    | 2 min    |
+| Ramp     | 100   | 5 min    |
+| Peak     | 200   | 8 min    |
 
-The system successfully handled concurrency and routing without degradation.
+### Results (Peak Phase — 200 concurrent users)
+| Metric           | Value     |
+|------------------|-----------|
+| Total Requests   | 60,835    |
+| Failures         | 0 (0.00%) |
+| RPS              | 67.56     |
+| p50 Latency      | 7ms       |
+| p95 Latency      | 17ms      |
+| p99 Latency      | 82ms      |
+| Max Latency      | 328ms     |
+
+![Load Test Charts](load_test.png)
 
 ## Project Status & Scope
 

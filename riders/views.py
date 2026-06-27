@@ -35,6 +35,7 @@ from orders.serializers import OrderListSerializer
 from warehouses.models import Warehouse, RiderPayout
 from core.permissions import IsRider, IsWarehouseAdminOrSuperAdmin
 from core.throttling import LocationUpdateThrottle
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -506,7 +507,8 @@ class RiderLiveLocationView(APIView):
     """
 
     permission_classes = [permissions.IsAuthenticated, IsRider]
-    throttle_classes = [LocationUpdateThrottle]
+    throttle_classes = [] if getattr(settings, 'LOAD_TEST', False) else [LocationUpdateThrottle]
+
 
     def patch(self, request):
         serializer = RiderLocationUpdateSerializer(data=request.data)

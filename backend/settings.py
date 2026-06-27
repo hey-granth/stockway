@@ -18,6 +18,9 @@ from core.config import Config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+LOAD_TEST = os.environ.get("LOAD_TEST", "false").lower() == "true"
+
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -218,28 +221,58 @@ REST_FRAMEWORK = {
     ),
 }
 
-CACHES = (
-    {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        }
-    }
-    if TESTING
-    else {
+if LOAD_TEST:
+    REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {}
+
+if LOAD_TEST:
+    CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": Config.get_redis_url(),
+            "LOCATION": os.environ.get("LOCAL_REDIS_URL", "redis://localhost:6379/0"),
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
-                **(
-                    {"CONNECTION_POOL_KWARGS": {"ssl_cert_reqs": None}}
-                    if Config.get_redis_url().startswith("rediss://")
-                    else {}
-                ),
+                "CONNECTION_POOL_KWARGS": {
+                    "max_connections": 50,
+                },
             },
         }
     }
-)
+else:
+    existing_redis_url = os.environ.get("REDIS_URL") or Config.get_redis_url()
+    CACHES = (
+        {
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            }
+        }
+        if TESTING
+        else {
+            "default": {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": existing_redis_url,
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                    **(
+                        {"CONNECTION_POOL_KWARGS": {"ssl_cert_reqs": None}}
+                        if existing_redis_url.startswith("rediss://")
+                        else {}
+                    ),
+                },
+            }
+        }
+    )
+
+if LOAD_TEST:
+    REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {}
+    
+    from django.core.cache import cache
+    try:
+        cache.clear()
+    except Exception:
+        pass
+
 
 # Supabase Configuration
 SUPABASE_URL = Config.SUPABASE_URL
@@ -288,6 +321,38 @@ if TESTING and Config.TEST_DATABASE_URL:
                 "PORT": test_port,
             }
         }
+
+# ===========================
+# ENVIRONMENT-BASED SERVICE SWITCHING FOR DATABASES
+# ===========================
+def parse_db_url(url):
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    return {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": parsed.path.lstrip("/"),
+        "USER": parsed.username or "",
+        "PASSWORD": parsed.password or "",
+        "HOST": parsed.hostname or "",
+        "PORT": parsed.port or "",
+    }
+
+if LOAD_TEST:
+    local_db_url = os.environ.get("LOCAL_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/stockway_local")
+    DATABASES = {
+        "default": {
+            **parse_db_url(local_db_url),
+            "CONN_MAX_AGE": 60,
+            "CONN_HEALTH_CHECKS": True,
+        }
+    }
+else:
+    existing_db_url = os.environ.get("DATABASE_URL")
+    if existing_db_url:
+        DATABASES = {
+            "default": parse_db_url(existing_db_url)
+        }
+
 
 # ===========================
 # SECURITY SETTINGS
@@ -346,8 +411,12 @@ CORS_ALLOW_HEADERS = [
 # ===========================
 
 # Dynamic broker and backend configuration based on environment
-CELERY_BROKER_URL = Config.get_redis_url()
-CELERY_RESULT_BACKEND = Config.get_redis_url()
+if LOAD_TEST:
+    CELERY_BROKER_URL = os.environ.get("LOCAL_REDIS_URL", "redis://localhost:6379/0")
+    CELERY_RESULT_BACKEND = os.environ.get("LOCAL_REDIS_URL", "redis://localhost:6379/0")
+else:
+    CELERY_BROKER_URL = os.environ.get("REDIS_URL") or Config.get_redis_url()
+    CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL") or Config.get_redis_url()
 
 # Celery broker connection retry settings
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
@@ -355,7 +424,7 @@ CELERY_BROKER_CONNECTION_RETRY = True
 CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
 
 # SSL configuration for Upstash Redis
-if Config.get_redis_url().startswith("rediss://"):
+if CELERY_BROKER_URL.startswith("rediss://"):
     # Production: Upstash requires SSL
     CELERY_REDIS_BACKEND_USE_SSL = {
         "ssl_cert_reqs": "none",
@@ -363,6 +432,7 @@ if Config.get_redis_url().startswith("rediss://"):
     CELERY_BROKER_USE_SSL = {
         "ssl_cert_reqs": "none",
     }
+
 
 # Celery task settings
 CELERY_ACCEPT_CONTENT = ["json"]

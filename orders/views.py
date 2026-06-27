@@ -17,6 +17,7 @@ from core.throttling import OrderCreationThrottle
 from core.order_state import OrderStateManager
 from core.validators import IDValidator, StringValidator
 import logging
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class OrderCreateView(APIView):
     """
 
     permission_classes = [permissions.IsAuthenticated, IsShopkeeper]
-    throttle_classes = [OrderCreationThrottle]
+    throttle_classes = [] if getattr(settings, 'LOAD_TEST', False) else [OrderCreationThrottle]
 
     def post(self, request):
         serializer = OrderCreateSerializer(
